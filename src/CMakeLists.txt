@@ -1,0 +1,24 @@
+cmake_minimum_required(VERSION 3.21)
+
+project(adaptivecpp-example)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+find_package(imgui REQUIRED)
+find_package(SDL2_mixer REQUIRED)
+find_package(SDL2 REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(CapnProto REQUIRED)
+
+add_subdirectory(external/imgui)
+
+capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS schema.capnp)
+
+add_executable(hello_muos main.cc sdl_utils.cc imgui_utils.cc ${CAPNP_SRCS})
+
+message(STATUS "CAPNP_SRCS: ${CAPNP_SRCS}")
+message(STATUS "CAPNP_HDRS: ${CAPNP_HDRS}")
+
+target_link_libraries(hello_muos PRIVATE imgui SDL2_mixer::SDL2_mixer SDL2::SDL2main spdlog::spdlog CapnProto::capnp)

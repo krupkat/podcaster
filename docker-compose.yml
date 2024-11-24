@@ -1,0 +1,9 @@
+services:
+  podcaster:
+    image: krupkat/podcaster:latest
+    build:
+      context: docker
+      additional_contexts:
+        - src=src
+    volumes:
+      - ./src:/build

@@ -1,0 +1,11 @@
+BasedOnStyle: Google
+
+ColumnLimit:     100
+SortIncludes: CaseInsensitive
+IncludeCategories:
+  - Regex:           '<(SDL|fmt|spdlog|imgui).*>'
+    Priority:        2
+  - Regex:           '<[[:alnum:]._]+>'
+    Priority:        1
+  - Regex:           '.*'
+    Priority:        3
