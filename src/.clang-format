@@ -3,7 +3,7 @@ BasedOnStyle: Google
 ColumnLimit:     100
 SortIncludes: CaseInsensitive
 IncludeCategories:
-  - Regex:           '<(SDL|fmt|spdlog|imgui).*>'
+  - Regex:           '<(SDL|fmt|spdlog|imgui|capnp|kj|curlpp).*>'
     Priority:        2
   - Regex:           '<[[:alnum:]._]+>'
     Priority:        1

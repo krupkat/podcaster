@@ -7,7 +7,7 @@ Podcast app compatible with [MuOS](https://muos.dev/).
 1. Build dev container:
 ```
 docker compose build
-docker compose -d run
+docker compose run -d podcaster
 ```
 
 2. Attach to running container (Dev Containers)

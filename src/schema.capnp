@@ -2,34 +2,51 @@
 
 using Cxx = import "/capnp/c++.capnp";
 
-$Cxx.namespace("foo::bar::baz");
+$Cxx.namespace("podcaster");
 
-struct Person {
-  id @0 :UInt32;
-  name @1 :Text;
-  email @2 :Text;
-  phones @3 :List(PhoneNumber);
-
-  struct PhoneNumber {
-    number @0 :Text;
-    type @1 :Type;
-
-    enum Type {
-      mobile @0;
-      home @1;
-      work @2;
+struct PlaybackProgress {
+  union {
+    done @0 :Void;
+    inProgress :group {
+      elapsedSeconds @1 :Int32;
+      totalSeconds @2 :Int32;
     }
-  }
-
-  employment :union {
-    unemployed @4 :Void;
-    employer @5 :Text;
-    school @6 :Text;
-    selfEmployed @7 :Void;
-    # We assume that a person is only one of these.
   }
 }
 
-struct AddressBook {
-  people @0 :List(Person);
+struct DownloadProgress {
+  union {
+    done @0 :Void;
+    inProgress :group {
+      downloadedBytes @1 :Int32;
+      totalBytes @2 :Int32;
+    }
+  }
+}
+
+interface Session(ProgressType) {
+  pause @0 ();
+  resume @1 ();
+  close @2 ();
+  progress @3 () -> (progress :ProgressType);
+}
+
+interface Episode {
+  struct Entry {
+    title @0 :Text;
+    description @1 :Text;
+  }
+
+  download @0 () -> (progress :Session(DownloadProgress));
+  play @1 () -> (progress :Session(PlaybackProgress));
+}
+
+struct Podcast {
+  title @0 :Text;
+  episodes @1 :List(Episode.Entry);
+}
+
+interface PodcasterService {
+  refresh @0 () -> (podcasts :List(Podcast));
+  connect @1 (podcast :Text) -> (episode :Episode);
 }

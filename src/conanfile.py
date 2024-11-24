@@ -39,6 +39,7 @@ class PodcasterRecipe(ConanFile):
         self.requires("sdl_mixer/2.8.0")
         self.requires("spdlog/1.15.0")
         self.requires("capnproto/1.0.2")
+        self.requires("curlpp/0.8.1.cci.20240530")
 
     def generate(self):
         tc = CMakeToolchain(self)

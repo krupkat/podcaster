@@ -1,3 +1,6 @@
+# these files are copied from the imgui conan package when generating the project,
+# see conanfile.py PodcasterRecipe.generate()
+
 set(IMGUI_EXTRA_SOURCES 
   imgui_impl_sdl2.cpp
   imgui_impl_sdlrenderer2.cpp
