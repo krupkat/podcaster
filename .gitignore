@@ -1,4 +1,4 @@
 .vscode
 build
-external/imgui/imgui*
+src/external/imgui/imgui*
 CMakeUserPresets.json
