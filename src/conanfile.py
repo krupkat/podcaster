@@ -47,6 +47,7 @@ class PodcasterRecipe(ConanFile):
         tc.variables["CMAKE_INTERPROCEDURAL_OPTIMIZATION"] = "ON"
         tc.variables["PODCASTER_BUILD_IMGUI_EXTRA"] = "ON"
         tc.variables["PODCASTER_CURLPP_FROM_PKGCONFIG"] = "OFF"
+        tc.variables["PODCASTER_HANDHELD_BUILD"] = "ON"
         tc.generate()
 
         imgui = self.dependencies["imgui"]

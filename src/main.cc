@@ -6,18 +6,26 @@
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
 #include <kj/async-io.h>
+#include <kj/async.h>
+#include <kj/string.h>
 #include <SDL.h>
 #include <SDL_gamecontroller.h>
 #include <SDL_mixer.h>
 #include <spdlog/spdlog.h>
 
+#include "capnproto_utils.h"
 #include "imgui_utils.h"
 #include "schema.capnp.h"
 #include "sdl_utils.h"
 
 const std::string kControllerDatabasePath = "/usr/lib/gamecontrollerdb.txt";
-const std::string kTargetDriver = "mali";
 const std::vector<std::string> kTargetController = {"ANBERNIC-keys", "Deeplay-keys"};
+
+#ifdef PODCASTER_HANDHELD_BUILD
+const std::string kTargetDriver = "mali";
+#else
+const std::string kTargetDriver = "wayland";
+#endif
 
 int main(int /*unused*/, char** /*unused*/) {
   SDL_SetHint(SDL_HINT_GAMECONTROLLERCONFIG_FILE, kControllerDatabasePath.c_str());
@@ -35,8 +43,10 @@ int main(int /*unused*/, char** /*unused*/) {
   auto exe_path = sdl::GetExePath();
   spdlog::info("Exe path: {}", exe_path.string());
 
+#ifdef PODCASTER_HANDHELD_BUILD
   auto controller_ctx = sdl::FindController(kTargetController);
   spdlog::info("Controller found: {}", controller_ctx.name);
+#endif
 
   // imgui
   auto imgui_ctx = imgui::Init(exe_path, window_ctx.handle.get(), window_ctx.renderer.get());
@@ -44,35 +54,28 @@ int main(int /*unused*/, char** /*unused*/) {
 
   // capnproto
   auto async_io = kj::setupAsyncIo();
-  auto& wait_scope = async_io.waitScope;
-
-  kj::Network& network = async_io.provider->getNetwork();
-  kj::Own<kj::NetworkAddress> addr =
-      network.parseAddress("unix-abstract:podcaster").wait(wait_scope);
-  kj::Own<kj::AsyncIoStream> conn = addr->connect().wait(wait_scope);
-
-  capnp::TwoPartyClient client(*conn);
-
-  podcaster::PodcasterService::Client podcaster_service =
-      client.bootstrap().castAs<podcaster::PodcasterService>();
-  spdlog::info("Connected to podcaster service");
+  auto client_ctx = capnproto::Connect("unix-abstract:podcaster", async_io);
 
   // event loop
   SDL_Event event;
   bool quit = false;
 
-  auto response = podcaster_service.refreshRequest().send().wait(wait_scope);
-  auto podcasts = response.getPodcasts();
+  if (client_ctx) {
+    spdlog::info("Connected to podcaster service");
 
-  for (auto podcast : podcasts) {
-    auto title = podcast.getTitle();
-    spdlog::info("Podcast title: {}", title.cStr());
+    auto response = client_ctx->podcaster_service.refreshRequest().send().wait(async_io.waitScope);
+    auto podcasts = response.getPodcasts();
 
-    auto episodes = podcast.getEpisodes();
-    for (auto episode : episodes) {
-      auto title = episode.getTitle();
-      auto description = episode.getDescription();
-      spdlog::info("Episode title: {}, description: {}", title.cStr(), description.cStr());
+    for (auto podcast : podcasts) {
+      auto title = podcast.getTitle();
+      spdlog::info("Podcast title: {}", title.cStr());
+
+      auto episodes = podcast.getEpisodes();
+      for (auto episode : episodes) {
+        auto title = episode.getTitle();
+        auto description = episode.getDescription();
+        spdlog::info("Episode title: {}, description: {}", title.cStr(), description.cStr());
+      }
     }
   }
 
