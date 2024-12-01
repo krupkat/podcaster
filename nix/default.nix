@@ -1,7 +1,7 @@
 { pkgs ? import <nixpkgs> { }
 }:
 
-let 
+let
   imgui_docking = (pkgs.imgui.overrideAttrs (oldAttrs: rec {
       version = "1.91.5-docking";
 
@@ -24,10 +24,12 @@ pkgs.mkShell {
     SDL2
     SDL2_mixer
     spdlog
-    capnproto
+    grpc
+    protobuf
     curlpp
     curl
     imgui_docking
     clang-tools_18
   ];
+
 }

@@ -11,11 +11,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-
 find_package(SDL2 REQUIRED)
 find_package(SDL2_mixer REQUIRED)
 find_package(spdlog REQUIRED)
-find_package(CapnProto REQUIRED)
+find_package(gRPC REQUIRED)
+find_package(Protobuf REQUIRED)
 
 find_package(imgui REQUIRED)
 if (PODCASTER_BUILD_IMGUI_EXTRA)
@@ -30,17 +30,30 @@ else()
     find_package(curlpp REQUIRED) # conan
 endif()
 
-set(CAPNPC_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
-capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS schema.capnp)
+set(PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto)
 
-add_executable(hello_muos main.cc sdl_utils.cc imgui_utils.cc capnproto_utils.cc ${CAPNP_SRCS})
-target_link_libraries(hello_muos PRIVATE imgui SDL2_mixer::SDL2_mixer SDL2::SDL2 spdlog::spdlog CapnProto::capnp-rpc)
-target_include_directories(hello_muos PRIVATE ${CAPNPC_OUTPUT_DIR})
+add_library(schema message.proto)
+target_link_libraries(schema PUBLIC gRPC::grpc++)
+target_include_directories(schema PUBLIC ${PROTOC_OUT_DIR})
+
+protobuf_generate(TARGET schema
+  PROTOC_OUT_DIR ${PROTOC_OUT_DIR}
+  LANGUAGE cpp
+)
+
+protobuf_generate(TARGET schema
+  PROTOC_OUT_DIR ${PROTOC_OUT_DIR}
+  LANGUAGE grpc
+  PLUGIN protoc-gen-grpc=$<TARGET_FILE:gRPC::grpc_cpp_plugin>
+  GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
+)
+
+add_executable(hello_muos main.cc sdl_utils.cc imgui_utils.cc podcaster_gui.cc)
+target_link_libraries(hello_muos PRIVATE imgui SDL2_mixer::SDL2_mixer SDL2::SDL2 spdlog::spdlog schema)
 
 if (PODCASTER_HANDHELD_BUILD)
   target_compile_definitions(hello_muos PRIVATE PODCASTER_HANDHELD_BUILD)
 endif()
 
-add_executable(podcaster podcaster.cc ${CAPNP_SRCS})
-target_link_libraries(podcaster PRIVATE CapnProto::capnp-rpc curlpp::curlpp)
-target_include_directories(podcaster PRIVATE ${CAPNPC_OUTPUT_DIR})
+add_executable(podcaster podcaster.cc database.cc)
+target_link_libraries(podcaster PRIVATE curlpp::curlpp schema protobuf::libprotobuf)

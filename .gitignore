@@ -2,3 +2,6 @@
 build
 src/external/imgui/imgui*
 CMakeUserPresets.json
+.envrc
+.direnv
+state

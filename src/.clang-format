@@ -1,9 +1,8 @@
 BasedOnStyle: Google
 
-ColumnLimit:     100
 SortIncludes: CaseInsensitive
 IncludeCategories:
-  - Regex:           '<(SDL|fmt|spdlog|imgui|capnp|kj|curlpp).*>'
+  - Regex:           '<(SDL|fmt|spdlog|imgui|curlpp|grpc).*>'
     Priority:        2
   - Regex:           '<[[:alnum:]._]+>'
     Priority:        1

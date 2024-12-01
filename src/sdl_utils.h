@@ -12,7 +12,8 @@
 namespace sdl {
 
 using SDLWindowPtr = std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)>;
-using SDLRendererPtr = std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)>;
+using SDLRendererPtr =
+    std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)>;
 using SDLGameControllerPtr =
     std::unique_ptr<SDL_GameController, decltype(&SDL_GameControllerClose)>;
 
@@ -34,13 +35,14 @@ struct SDLGameControllerContext {
 
 SDLContext Init(Uint32 flags);
 
-SDLWindowContext InitFullscreenWindow(int driver_index, Uint32 render_flags);
+SDLWindowContext InitWindow(int driver_index, Uint32 render_flags);
 
 int FindDriver(std::string target_driver);
 
 void VerifyVersion();
 
-SDLGameControllerContext FindController(std::vector<std::string> target_controller);
+SDLGameControllerContext FindController(
+    std::vector<std::string> target_controller);
 
 std::filesystem::path GetExePath();
 

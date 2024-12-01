@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package podcaster;
+
+message PlaybackProgress {
+  int32 elapsed_seconds = 1;
+  int32 total_seconds = 2;
+}
+
+message DownloadProgress {
+  int32 downloaded_bytes = 1;
+  int32 total_bytes = 2;
+}
+
+message RefreshProgress {
+  int32 refreshed_feeds = 1;
+  int32 total_feeds = 2;
+}
+
+message Episode {
+  string episode_uri = 1;
+  string title = 2;
+  string description = 3;
+  bool downloaded = 4;
+}
+
+message Podcast {
+  string podcast_uri = 1;
+  string title = 2;
+  repeated Episode episodes = 3;
+}
+
+message Empty {}
+
+message DatabaseState {
+  repeated Podcast podcasts = 1;
+  repeated Episode queue = 2;
+};
+
+service Podcaster {
+  rpc State (Empty) returns (DatabaseState) {}
+  rpc Refresh (Empty) returns (stream RefreshProgress) {}
+}

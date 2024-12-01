@@ -1,76 +1,83 @@
-#include <capnp/rpc-twoparty.h>
+#include <filesystem>
+#include <thread>
+
 #include <curlpp/cURLpp.hpp>
-#include <kj/async-io.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/support/status.h>
 
-#include "schema.capnp.h"
+#include "database.h"
+#include "message.grpc.pb.h"
+#include "message.pb.h"
 
-template <typename TProgressType>
-class SessionImpl : public podcaster::Session<TProgressType>::Server {
+class PodcasterImpl final : public podcaster::Podcaster::Service {
  public:
-  using Base = podcaster::Session<TProgressType>::Server;
+  explicit PodcasterImpl(std::filesystem::path data_dir)
+      : db_(std::make_unique<podcaster::Database>(data_dir)) {}
 
-  kj::Promise<void> pause(Base::PauseContext context) override { return kj::READY_NOW; }
-  kj::Promise<void> resume(Base::ResumeContext context) override { return kj::READY_NOW; }
-  kj::Promise<void> close(Base::CloseContext context) override { return kj::READY_NOW; }
-  kj::Promise<void> progress(Base::ProgressContext context) override {
-    auto results = context.getResults();
-    if constexpr (std::is_same_v<TProgressType, podcaster::PlaybackProgress>) {
-      auto progress = results.initProgress().initInProgress();
-      progress.setElapsedSeconds(10);
-      progress.setTotalSeconds(100);
-    } else {
-      auto progress = results.initProgress().initInProgress();
-      progress.setDownloadedBytes(10);
-      progress.setTotalBytes(100);
+  grpc::Status State(grpc::ServerContext* context,
+                     const podcaster::Empty* request,
+                     podcaster::DatabaseState* response) override {
+    auto state = db_->GetState();
+    response->CopyFrom(state);
+    return grpc::Status::OK;
+  }
+
+  grpc::Status Refresh(
+      grpc::ServerContext* context, const podcaster::Empty* request,
+      grpc::ServerWriter<podcaster::RefreshProgress>* response) override {
+    for (int i = 0; i < 10; i++) {
+      podcaster::RefreshProgress progress;
+      progress.set_refreshed_feeds(i + 1);
+      progress.set_total_feeds(10);
+      response->Write(progress);
+      std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    return kj::READY_NOW;
+
+    podcaster::Podcast pod1;
+    pod1.set_podcast_uri("https://example.com/podcast1");
+    pod1.set_title("Podcast 1");
+    auto* ep1 = pod1.add_episodes();
+    ep1->set_episode_uri("https://example.com/podcast1/episode1");
+    ep1->set_title("Episode 1");
+    ep1->set_description("Description 1");
+    auto* ep2 = pod1.add_episodes();
+    ep2->set_episode_uri("https://example.com/podcast1/episode2");
+    ep2->set_title("Episode 2");
+    ep2->set_description("Description 2");
+    db_->SavePodcast(pod1);
+
+    podcaster::Podcast pod2;
+    pod2.set_podcast_uri("https://example.com/podcast2");
+    pod2.set_title("Podcast 2");
+    auto* ep3 = pod2.add_episodes();
+    ep3->set_episode_uri("https://example.com/podcast2/episode1");
+    ep3->set_title("Episode 1");
+    ep3->set_description("Description 1");
+    db_->SavePodcast(pod2);
+    db_->SaveState();
+
+    return grpc::Status::OK;
   }
+
+ private:
+  std::unique_ptr<podcaster::Database> db_;
 };
 
-class EpisodeImpl : public podcaster::Episode::Server {
- public:
-  kj::Promise<void> play(PlayContext context) override {
-    auto results = context.getResults();
-    results.setProgress(kj::heap<SessionImpl<podcaster::PlaybackProgress>>());
-    return kj::READY_NOW;
-  }
-  kj::Promise<void> download(DownloadContext context) override {
-    auto results = context.getResults();
-    results.setProgress(kj::heap<SessionImpl<podcaster::DownloadProgress>>());
-    return kj::READY_NOW;
-  }
-};
-
-class PodcasterServiceImpl : public podcaster::PodcasterService::Server {
- public:
-  kj::Promise<void> refresh(RefreshContext context) override {
-    auto results = context.getResults();
-    auto podcasts = results.initPodcasts(1);
-    podcasts[0].setTitle("Hello, World!");
-    auto episodes = podcasts[0].initEpisodes(1);
-    episodes[0].setTitle("Episode 1");
-    episodes[0].setDescription("This is the first episode.");
-    return kj::READY_NOW;
-  }
-
-  kj::Promise<void> connect(ConnectContext context) override {
-    auto results = context.getResults();
-    results.setEpisode(kj::heap<EpisodeImpl>());
-    return kj::READY_NOW;
-  }
-};
-
-int main() {
+int main(int argc, char** argv) {
   curlpp::Cleanup cleanup;
 
-  auto async_io = kj::setupAsyncIo();
+  std::filesystem::path data_dir = argv[1];
+  if (!data_dir.is_absolute()) {
+    throw std::runtime_error("Data directory must be an absolute path.");
+  }
 
-  kj::Network& network = async_io.provider->getNetwork();
-  kj::Own<kj::NetworkAddress> addr =
-      network.parseAddress("unix-abstract:podcaster").wait(async_io.waitScope);
-  kj::Own<kj::ConnectionReceiver> listener = addr->listen();
+  std::string server_address("0.0.0.0:50051");
+  PodcasterImpl service(data_dir);
 
-  capnp::TwoPartyServer server(kj::heap<PodcasterServiceImpl>());
-
-  server.listen(*listener).wait(async_io.waitScope);
+  grpc::ServerBuilder builder;
+  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
+  std::cout << "Server listening on " << server_address << std::endl;
+  server->Wait();
 }

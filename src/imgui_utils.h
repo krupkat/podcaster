@@ -16,7 +16,8 @@ struct ImGuiContext {
   utils::DestructorCallback imgui_sdl_renderer_backend_quit;
 };
 
-ImGuiContext Init(std::filesystem::path root, SDL_Window* window, SDL_Renderer* renderer);
+ImGuiContext Init(std::filesystem::path root, SDL_Window* window,
+                  SDL_Renderer* renderer);
 
 template <typename TFunc>
 void Render(TFunc render_func, SDL_Renderer* renderer) {
