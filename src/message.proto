@@ -40,4 +40,9 @@ message DatabaseState {
 service Podcaster {
   rpc State (Empty) returns (DatabaseState) {}
   rpc Refresh (Empty) returns (stream RefreshProgress) {}
+  // rpc Download 
 }
+
+message Config {
+  repeated string feed = 1;
+};

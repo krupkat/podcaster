@@ -78,7 +78,12 @@ int main(int /*unused*/, char** /*unused*/) {
     SDL_SetRenderDrawColor(window_ctx.renderer.get(), 0, 0, 0, 255);
     SDL_RenderClear(window_ctx.renderer.get());
 
-    imgui::Render([&]() { podcaster_gui.Run(); }, window_ctx.renderer.get());
+    imgui::Render(
+        [&]() {
+          podcaster_gui.Run();
+          // ImGui::ShowDemoWindow();
+        },
+        window_ctx.renderer.get());
 
     SDL_RenderPresent(window_ctx.renderer.get());
   }

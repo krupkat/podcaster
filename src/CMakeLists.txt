@@ -16,6 +16,7 @@ find_package(SDL2_mixer REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(gRPC REQUIRED)
 find_package(Protobuf REQUIRED)
+find_package(pugixml REQUIRED)
 
 find_package(imgui REQUIRED)
 if (PODCASTER_BUILD_IMGUI_EXTRA)
@@ -56,4 +57,4 @@ if (PODCASTER_HANDHELD_BUILD)
 endif()
 
 add_executable(podcaster podcaster.cc database.cc)
-target_link_libraries(podcaster PRIVATE curlpp::curlpp schema protobuf::libprotobuf)
+target_link_libraries(podcaster PRIVATE curlpp::curlpp schema protobuf::libprotobuf spdlog::spdlog pugixml::static)

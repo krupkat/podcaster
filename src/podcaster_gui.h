@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <variant>
 
 #include <grpcpp/create_channel.h>
 #include <spdlog/spdlog.h>
@@ -8,6 +9,24 @@
 #include "message.grpc.pb.h"
 
 namespace podcaster {
+
+enum class ActionType { kIdle, kRefresh, kDownloadEpisode, kPlayEpisode };
+
+struct EpisodeExtra {
+  std::string episode_uri;
+};
+
+struct Action {
+  ActionType type = ActionType::kIdle;
+  std::variant<std::monostate, EpisodeExtra> extra;
+};
+
+inline Action& operator|=(Action& lhs, const Action& rhs) {
+  if (rhs.type != ActionType::kIdle) {
+    lhs = rhs;
+  }
+  return lhs;
+}
 
 class PodcasterClient {
  public:
@@ -55,7 +74,7 @@ class PodcasterGui {
   void Run();
 
  private:
-  void Draw();
+  Action Draw();
 
   PodcasterClient client_;
   DatabaseState state_;
