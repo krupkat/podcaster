@@ -2,7 +2,7 @@ BasedOnStyle: Google
 
 SortIncludes: CaseInsensitive
 IncludeCategories:
-  - Regex:           '<(SDL|fmt|spdlog|imgui|curlpp|grpc|google}pugixml).*>'
+  - Regex:           '<(SDL|fmt|spdlog|imgui|curlpp|grpc|google|pugixml).*>'
     Priority:        2
   - Regex:           '<[[:alnum:]._]+>'
     Priority:        1

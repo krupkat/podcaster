@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vector>
 
+#include "database_utils.h"
 #include "message.pb.h"
 
 namespace podcaster {
@@ -19,6 +20,16 @@ class Database {
   }
 
   const DatabaseState& GetState() const { return db_; }
+
+  auto FindEpisodeMutable(const EpisodeUri& uri)
+      -> std::optional<
+          google::protobuf::internal::RepeatedPtrIterator<Episode>> {
+    return utils::FindEpisodeMutable(uri, &db_);
+  }
+
+  void ApplyUpdate(const EpisodeUpdate& update) {
+    utils::ApplyUpdate(update, &db_);
+  }
 
   void SaveState() {
     std::filesystem::path file_path = data_dir_ / "db.bin";
@@ -43,24 +54,28 @@ class Database {
     return false;
   }
 
-  void SavePodcast(const Podcast& updated_podcast) {
+  std::vector<EpisodeUri> SavePodcast(const Podcast& updated_podcast) {
     auto podcast = std::find_if(
         db_.mutable_podcasts()->begin(), db_.mutable_podcasts()->end(),
         [&updated_podcast](const Podcast& p) {
           return p.podcast_uri() == updated_podcast.podcast_uri();
         });
 
+    std::vector<EpisodeUri> new_episodes;
+
     if (podcast != db_.mutable_podcasts()->end()) {
       // existing podcast
       for (const auto& updated_episode : updated_podcast.episodes()) {
         if (UpdateEpisode(podcast->mutable_episodes(), updated_episode)) {
-          // existing episode, update queue
-          UpdateEpisode(db_.mutable_queue(), updated_episode);
+          // existing episode was updated
         } else {
           // new episode
           podcast->add_episodes()->CopyFrom(updated_episode);
-          // add to queue
-          db_.add_queue()->CopyFrom(updated_episode);
+          // queue download
+          EpisodeUri uri;
+          uri.set_podcast_uri(podcast->podcast_uri());
+          uri.set_episode_uri(updated_episode.episode_uri());
+          new_episodes.push_back(uri);
         }
       }
     } else {
@@ -69,10 +84,15 @@ class Database {
 
       int latest_episode_index = updated_podcast.episodes_size() - 1;
       if (latest_episode_index >= 0) {
-        db_.add_queue()->CopyFrom(
-            updated_podcast.episodes().at(latest_episode_index));
+        EpisodeUri uri;
+        uri.set_podcast_uri(podcast->podcast_uri());
+        uri.set_episode_uri(
+            updated_podcast.episodes().at(latest_episode_index).episode_uri());
+        new_episodes.push_back(uri);
       }
     }
+
+    return new_episodes;
   }
 
  private:

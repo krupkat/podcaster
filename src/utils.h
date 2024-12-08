@@ -1,9 +1,9 @@
 #pragma once
 
-#include <functional>
-#include <optional>
-
 #include <format>
+#include <functional>
+#include <future>
+#include <optional>
 
 namespace utils {
 template <typename TException, typename... TArgs>
@@ -35,4 +35,11 @@ class DestructorCallback {
  private:
   std::optional<std::function<void()>> callback_;
 };
+
+template <typename TType>
+bool IsReady(const std::future<TType>& future) {
+  return future.valid() &&
+         future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+}
+
 }  // namespace utils

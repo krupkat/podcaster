@@ -1,5 +1,6 @@
 #pragma once
 
+#include <future>
 #include <memory>
 #include <variant>
 
@@ -7,12 +8,14 @@
 #include <spdlog/spdlog.h>
 
 #include "message.grpc.pb.h"
+#include "message.pb.h"
 
 namespace podcaster {
 
 enum class ActionType { kIdle, kRefresh, kDownloadEpisode, kPlayEpisode };
 
 struct EpisodeExtra {
+  std::string podcast_uri;
   std::string episode_uri;
 };
 
@@ -41,24 +44,45 @@ class PodcasterClient {
     return response;
   }
 
-  void Refresh() {
+  DatabaseState Refresh() {
     grpc::ClientContext context;
     Empty request;
-    std::unique_ptr<grpc::ClientReader<RefreshProgress>> reader(
-        stub_->Refresh(&context, request));
+    DatabaseState response;
+    stub_->Refresh(&context, request, &response);
+    return response;
+  }
 
-    RefreshProgress progress;
-    while (reader->Read(&progress)) {
-      spdlog::info("Refreshed {}/{}", progress.refreshed_feeds(),
-                   progress.total_feeds());
+  std::vector<EpisodeUpdate> ReadUpdates() {
+    grpc::ClientContext context;
+    Empty request;
+    std::unique_ptr<grpc::ClientReader<EpisodeUpdate>> reader(
+        stub_->EpisodeUpdates(&context, request));
+
+    std::vector<EpisodeUpdate> updates;
+
+    EpisodeUpdate update;
+    while (reader->Read(&update)) {
+      updates.push_back(update);
     }
 
     grpc::Status status = reader->Finish();
     if (!status.ok()) {
-      spdlog::error("Refresh failed: {}", status.error_message());
+      spdlog::error("Read updates failed: {}", status.error_message());
     } else {
-      spdlog::info("Refresh completed");
+      spdlog::info("Read updates completed");
     }
+
+    return updates;
+  }
+
+  void Download(const std::string& podcast_uri,
+                const std::string& episode_uri) {
+    grpc::ClientContext context;
+    Empty response;
+    EpisodeUri uri;
+    uri.set_podcast_uri(podcast_uri);
+    uri.set_episode_uri(episode_uri);
+    stub_->Download(&context, uri, &response);
   }
 
  private:
@@ -78,6 +102,8 @@ class PodcasterGui {
 
   PodcasterClient client_;
   DatabaseState state_;
+
+  std::future<DatabaseState> refresh_future_;
 };
 
 }  // namespace podcaster

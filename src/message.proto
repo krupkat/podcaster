@@ -2,26 +2,19 @@ syntax = "proto3";
 
 package podcaster;
 
-message PlaybackProgress {
-  int32 elapsed_seconds = 1;
-  int32 total_seconds = 2;
-}
-
-message DownloadProgress {
-  int32 downloaded_bytes = 1;
-  int32 total_bytes = 2;
-}
-
-message RefreshProgress {
-  int32 refreshed_feeds = 1;
-  int32 total_feeds = 2;
+enum DownloadStatus {
+  NOT_DOWNLOADED = 0;
+  DOWNLOAD_IN_PROGRESS = 1;
+  DOWNLOAD_ERROR = 2;
+  DOWNLOAD_SUCCESS = 3;
 }
 
 message Episode {
   string episode_uri = 1;
   string title = 2;
   string description = 3;
-  bool downloaded = 4;
+  DownloadStatus download_status = 4;
+  float download_progress = 6;
 }
 
 message Podcast {
@@ -34,13 +27,26 @@ message Empty {}
 
 message DatabaseState {
   repeated Podcast podcasts = 1;
-  repeated Episode queue = 2;
 };
+
+message EpisodeUri {
+  string podcast_uri = 1;
+  string episode_uri = 2;
+}
+
+message EpisodeUpdate {
+  EpisodeUri uri = 1;
+  oneof status {
+    DownloadStatus new_download_status = 3;
+    float new_download_progress = 4;
+  }
+}
 
 service Podcaster {
   rpc State (Empty) returns (DatabaseState) {}
-  rpc Refresh (Empty) returns (stream RefreshProgress) {}
-  // rpc Download 
+  rpc Refresh (Empty) returns (DatabaseState) {}
+  rpc EpisodeUpdates (Empty) returns (stream EpisodeUpdate) {}
+  rpc Download (EpisodeUri) returns (Empty) {}
 }
 
 message Config {
