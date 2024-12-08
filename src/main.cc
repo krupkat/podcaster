@@ -6,7 +6,6 @@
 #include <imgui_impl_sdlrenderer2.h>
 #include <SDL.h>
 #include <SDL_gamecontroller.h>
-#include <SDL_mixer.h>
 #include <spdlog/spdlog.h>
 
 #include "imgui_utils.h"

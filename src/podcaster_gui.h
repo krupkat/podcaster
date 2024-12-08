@@ -12,7 +12,16 @@
 
 namespace podcaster {
 
-enum class ActionType { kIdle, kRefresh, kDownloadEpisode, kPlayEpisode };
+enum class ActionType {
+  kIdle,
+  kRefresh,
+  kDownloadEpisode,
+  kPlayEpisode,
+  kPauseEpisode,
+  kResumeEpisode,
+  kStopEpisode,
+  kDeleteEpisode
+};
 
 struct EpisodeExtra {
   std::string podcast_uri;
@@ -75,14 +84,35 @@ class PodcasterClient {
     return updates;
   }
 
-  void Download(const std::string& podcast_uri,
-                const std::string& episode_uri) {
+  void EpisodeAction(const std::string& podcast_uri,
+                     const std::string& episode_uri, ActionType action) {
     grpc::ClientContext context;
     Empty response;
     EpisodeUri uri;
     uri.set_podcast_uri(podcast_uri);
     uri.set_episode_uri(episode_uri);
-    stub_->Download(&context, uri, &response);
+    switch (action) {
+      case ActionType::kDownloadEpisode:
+        stub_->Download(&context, uri, &response);
+        break;
+      case ActionType::kPlayEpisode:
+        stub_->Play(&context, uri, &response);
+        break;
+      case ActionType::kPauseEpisode:
+        stub_->Pause(&context, uri, &response);
+        break;
+      case ActionType::kResumeEpisode:
+        stub_->Resume(&context, uri, &response);
+        break;
+      case ActionType::kStopEpisode:
+        stub_->Stop(&context, uri, &response);
+        break;
+      case ActionType::kDeleteEpisode:
+        stub_->Delete(&context, uri, &response);
+        break;
+      default:
+        break;
+    }
   }
 
  private:

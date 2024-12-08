@@ -14,6 +14,12 @@ Action DrawEpisode(const Podcast& podcast, const Episode& episode) {
           ? ImGuiTreeNodeFlags_DefaultOpen
           : 0;
 
+  auto make_episode_action = [&](ActionType type) {
+    return Action{
+        .type = type,
+        .extra = EpisodeExtra{podcast.podcast_uri(), episode.episode_uri()}};
+  };
+
   if (ImGui::TreeNodeEx(episode.title().c_str(),
                         ImGuiTreeNodeFlags_NoTreePushOnOpen | extra_flags)) {
     if (ImGui::BeginChild(episode.episode_uri().c_str(), ImVec2(0, 0),
@@ -23,22 +29,56 @@ Action DrawEpisode(const Podcast& podcast, const Episode& episode) {
       ImGui::TextWrapped("%s", episode.description().c_str());
 
       if (episode.download_status() == DownloadStatus::DOWNLOAD_SUCCESS) {
-        if (ImGui::Button("Play")) {
-          action |= {.type = ActionType::kPlayEpisode,
-                     .extra = EpisodeExtra{podcast.podcast_uri(),
-                                           episode.episode_uri()}};
+        if (episode.playback_status() == PlaybackStatus::NOT_PLAYING) {
+          if (ImGui::Button("Play")) {
+            action |= make_episode_action(ActionType::kPlayEpisode);
+          }
+          ImGui::SameLine();
+          if (ImGui::Button("Delete")) {
+            action |= make_episode_action(ActionType::kDeleteEpisode);
+          }
+          ImGui::SameLine();
+        } else {
+          if (episode.playback_status() == PlaybackStatus::PLAYING) {
+            if (ImGui::Button("Pause")) {
+              action |= make_episode_action(ActionType::kPauseEpisode);
+            }
+            ImGui::SameLine();
+          }
+          if (episode.playback_status() == PlaybackStatus::PAUSED) {
+            if (ImGui::Button("Resume")) {
+              action |= make_episode_action(ActionType::kResumeEpisode);
+            }
+            ImGui::SameLine();
+          }
+          if (ImGui::Button("Stop")) {
+            action |= make_episode_action(ActionType::kStopEpisode);
+          }
+          ImGui::SameLine();
         }
       }
       if (episode.download_status() == DownloadStatus::NOT_DOWNLOADED ||
           episode.download_status() == DownloadStatus::DOWNLOAD_ERROR) {
         if (ImGui::Button("Download")) {
-          action |= {.type = ActionType::kDownloadEpisode,
-                     .extra = EpisodeExtra{podcast.podcast_uri(),
-                                           episode.episode_uri()}};
+          action |= make_episode_action(ActionType::kDownloadEpisode);
         }
+        ImGui::SameLine();
       }
       if (episode.download_status() == DownloadStatus::DOWNLOAD_IN_PROGRESS) {
-        ImGui::ProgressBar(episode.download_progress());
+        std::string label = fmt::format("Downloading: {:.0f}%",
+                                        episode.download_progress() * 100.0f);
+        ImGui::ProgressBar(episode.download_progress(), ImVec2(-1.0f, 0.f),
+                           label.c_str());
+        ImGui::SameLine();
+      }
+      if (int start = episode.playback_progress().elapsed_ms(); start > 1) {
+        int end = episode.playback_progress().total_ms();
+        std::string name = episode.playback_status() == PlaybackStatus::PLAYING
+                               ? "Playing"
+                               : "Progress";
+        std::string label = fmt::format("{}: {}s/{}s", name, start, end);
+        ImGui::ProgressBar(static_cast<float>(start) / end, ImVec2(-1.0f, 0.f),
+                           label.c_str());
       }
     }
     ImGui::EndChild();
@@ -112,16 +152,21 @@ void PodcasterGui::Run() {
       refresh_future_ =
           std::async(std::launch::async, [&] { return client_.Refresh(); });
       break;
-    case ActionType::kDownloadEpisode: {
+    case ActionType::kDownloadEpisode:
+      [[fallthrough]];
+    case ActionType::kPauseEpisode:
+      [[fallthrough]];
+    case ActionType::kResumeEpisode:
+      [[fallthrough]];
+    case ActionType::kStopEpisode:
+      [[fallthrough]];
+    case ActionType::kDeleteEpisode:
+      [[fallthrough]];
+    case ActionType::kPlayEpisode: {
       const auto& extra = std::get<EpisodeExtra>(action.extra);
-      spdlog::info("Download episode: {}", extra.episode_uri);
-      client_.Download(extra.podcast_uri, extra.episode_uri);
+      client_.EpisodeAction(extra.podcast_uri, extra.episode_uri, action.type);
       break;
     }
-    case ActionType::kPlayEpisode:
-      spdlog::info("Play episode: {}",
-                   std::get<EpisodeExtra>(action.extra).episode_uri);
-      break;
     default:
       break;
   }

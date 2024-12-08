@@ -12,11 +12,13 @@
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/status_code_enum.h>
 #include <pugixml.hpp>
+#include <SDL_mixer.h>
 #include <spdlog/spdlog.h>
 
 #include "database.h"
 #include "message.grpc.pb.h"
 #include "message.pb.h"
+#include "sdl_mixer_utils.h"
 #include "utils.h"
 
 std::string DownloadFilename(const std::string& episode_uri) {
@@ -77,7 +79,8 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
  public:
   explicit PodcasterImpl(std::filesystem::path data_dir)
       : data_dir_(data_dir),
-        db_(std::make_unique<podcaster::Database>(data_dir)) {}
+        db_(std::make_unique<podcaster::Database>(data_dir)),
+        playback_controller_(this) {}
 
   grpc::Status State(grpc::ServerContext* context,
                      const podcaster::Empty* request,
@@ -147,7 +150,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
         return 0;
       }
       float progress = static_cast<float>(dlnow) / dltotal;
-      impl_->QueueProgressUpdate(uri_, progress);
+      impl_->QueueDownloadProgress(uri_, progress);
       return 0;
     }
 
@@ -162,11 +165,143 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     return functor->Execute(dltotal, dlnow, ultotal, ulnow);
   };
 
+  struct Music {
+    sdl::MixMusicPtr ptr;
+    podcaster::EpisodeUri uri;
+  };
+
+  class PlaybackController {
+   public:
+    PlaybackController(PodcasterImpl* impl) : impl_(impl) {}
+
+    void Play(const podcaster::EpisodeUri& uri) {
+      if (music_) {
+        auto position = Mix_GetMusicPosition(music_->ptr.get());
+        impl_->QueuePlaybackProgress(music_->uri, position * 1000., 0);
+        impl_->QueuePlaybackStatus(music_->uri,
+                                   podcaster::PlaybackStatus::NOT_PLAYING);
+        Mix_HaltMusic();
+        music_.reset();
+      }
+
+      if (auto episode = impl_->db_->FindEpisodeMutable(uri); episode) {
+        std::filesystem::path download_path =
+            impl_->data_dir_ / DownloadFilename(uri.episode_uri());
+
+        if (auto music_ptr = sdl::LoadMusic(download_path); music_ptr) {
+          music_ = {std::move(music_ptr), uri};
+
+          Mix_PlayMusic(music_->ptr.get(), 0);
+
+          impl_->QueuePlaybackStatus(uri, podcaster::PlaybackStatus::PLAYING);
+
+          if (int elapsed_ms =
+                  episode.value()->playback_progress().elapsed_ms();
+              elapsed_ms > 0) {
+            int res = Mix_SetMusicPosition(
+                episode.value()->playback_progress().elapsed_ms() / 1000.);
+          }
+
+          if (int duration_ms = episode.value()->playback_progress().total_ms();
+              duration_ms == 0) {
+            auto duration = Mix_MusicDuration(music_->ptr.get());
+            impl_->QueuePlaybackProgress(uri, 0, duration * 1000.);
+          }
+        }
+      }
+    }
+
+    void Pause(const podcaster::EpisodeUri& uri) {
+      if (music_ and uri.podcast_uri() == music_->uri.podcast_uri() and
+          uri.episode_uri() == music_->uri.episode_uri()) {
+        auto position = Mix_GetMusicPosition(music_->ptr.get());
+        impl_->QueuePlaybackProgress(music_->uri, position * 1000., 0);
+        Mix_PauseMusic();
+        impl_->QueuePlaybackStatus(music_->uri,
+                                   podcaster::PlaybackStatus::PAUSED);
+      }
+    }
+
+    void Resume(const podcaster::EpisodeUri& uri) {
+      spdlog::info("Resume");
+      if (music_ and uri.podcast_uri() == music_->uri.podcast_uri() and
+          uri.episode_uri() == music_->uri.episode_uri()) {
+        Mix_ResumeMusic();
+        spdlog::info("Resumed");
+        impl_->QueuePlaybackStatus(music_->uri,
+                                   podcaster::PlaybackStatus::PLAYING);
+      }
+    }
+
+    void Stop(const podcaster::EpisodeUri& uri) {
+      if (music_ and uri.podcast_uri() == music_->uri.podcast_uri() and
+          uri.episode_uri() == music_->uri.episode_uri()) {
+        impl_->QueuePlaybackProgress(music_->uri, 1, 0);
+        Mix_HaltMusic();
+        impl_->QueuePlaybackStatus(music_->uri,
+                                   podcaster::PlaybackStatus::NOT_PLAYING);
+        music_.reset();
+      }
+    }
+
+   private:
+    sdl::SDLMixerContext sdl_mixer_ctx_ = sdl::InitMix();
+    std::optional<Music> music_;
+
+    PodcasterImpl* impl_;
+  };
+
+  grpc::Status Play(grpc::ServerContext* context,
+                    const podcaster::EpisodeUri* request,
+                    podcaster::Empty* response) override {
+    playback_controller_.Play(*request);
+    return grpc::Status::OK;
+  }
+
+  grpc::Status Pause(grpc::ServerContext* context,
+                     const podcaster::EpisodeUri* request,
+                     podcaster::Empty* response) override {
+    playback_controller_.Pause(*request);
+    return grpc::Status::OK;
+  }
+
+  grpc::Status Resume(grpc::ServerContext* context,
+                      const podcaster::EpisodeUri* request,
+                      podcaster::Empty* response) override {
+    playback_controller_.Resume(*request);
+    return grpc::Status::OK;
+  }
+
+  grpc::Status Stop(grpc::ServerContext* context,
+                    const podcaster::EpisodeUri* request,
+                    podcaster::Empty* response) override {
+    playback_controller_.Stop(*request);
+    return grpc::Status::OK;
+  }
+
+  grpc::Status Delete(grpc::ServerContext* context,
+                      const podcaster::EpisodeUri* request,
+                      podcaster::Empty* response) override {
+    if (auto episode = db_->FindEpisodeMutable(*request); episode) {
+      if (episode.value()->download_status() ==
+          podcaster::DownloadStatus::DOWNLOAD_SUCCESS) {
+        std::filesystem::path download_path =
+            data_dir_ / DownloadFilename(request->episode_uri());
+        std::filesystem::remove(download_path);
+
+        QueueDownloadProgress(*request, 0);
+        QueueDownloadStatus(*request,
+                            podcaster::DownloadStatus::NOT_DOWNLOADED);
+      }
+    }
+    return grpc::Status::OK;
+  }
+
   grpc::Status Download(grpc::ServerContext* context,
                         const podcaster::EpisodeUri* request,
                         podcaster::Empty* response) override {
     auto result_future = std::async(std::launch::async, [this, uri = *request] {
-      QueueStatusUpdate(uri, podcaster::DownloadStatus::DOWNLOAD_IN_PROGRESS);
+      QueueDownloadStatus(uri, podcaster::DownloadStatus::DOWNLOAD_IN_PROGRESS);
 
       std::filesystem::path download_path =
           data_dir_ / DownloadFilename(uri.episode_uri());
@@ -175,7 +310,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
       if (not download_file.is_open()) {
         spdlog::error("Failed to open download file: {}",
                       download_path.string());
-        QueueStatusUpdate(uri, podcaster::DownloadStatus::DOWNLOAD_ERROR);
+        QueueDownloadStatus(uri, podcaster::DownloadStatus::DOWNLOAD_ERROR);
         return;
       }
 
@@ -190,7 +325,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
       my_request.getCurlHandle().option(CURLOPT_XFERINFODATA, &xfer_callback);
       my_request.perform();
 
-      QueueStatusUpdate(uri, podcaster::DownloadStatus::DOWNLOAD_SUCCESS);
+      QueueDownloadStatus(uri, podcaster::DownloadStatus::DOWNLOAD_SUCCESS);
     });
 
     {
@@ -231,33 +366,53 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     }
   }
 
-  void QueueStatusUpdate(const podcaster::EpisodeUri& request,
-                         podcaster::DownloadStatus status) {
+  void QueueDownloadStatus(const podcaster::EpisodeUri& request,
+                           podcaster::DownloadStatus status) {
     podcaster::EpisodeUpdate update;
     update.mutable_uri()->CopyFrom(request);
     update.set_new_download_status(status);
     QueueUpdate(update, true);
   }
 
-  void QueueProgressUpdate(const podcaster::EpisodeUri& request,
-                           float progress) {
+  void QueueDownloadProgress(const podcaster::EpisodeUri& request,
+                             float progress) {
     podcaster::EpisodeUpdate update;
     update.mutable_uri()->CopyFrom(request);
     update.set_new_download_progress(progress);
     QueueUpdate(update);
   }
 
-  std::atomic<int> downloads_in_flight_{0};
+  void QueuePlaybackStatus(const podcaster::EpisodeUri& request,
+                           podcaster::PlaybackStatus status) {
+    podcaster::EpisodeUpdate update;
+    update.mutable_uri()->CopyFrom(request);
+    update.set_new_playback_status(status);
+    QueueUpdate(update);
+  }
+
+  void QueuePlaybackProgress(const podcaster::EpisodeUri& request,
+                             int position_ms, int duration_ms) {
+    podcaster::EpisodeUpdate update;
+    update.mutable_uri()->CopyFrom(request);
+    auto* progress = update.mutable_new_playback_progress();
+    progress->set_elapsed_ms(position_ms);
+    progress->set_total_ms(duration_ms);
+    QueueUpdate(update);
+  }
+
+  std::filesystem::path data_dir_;
+
   std::mutex download_mtx_;
   std::vector<std::future<void>> downloads_in_progress_;
 
   std::mutex updates_mtx_;
   std::vector<podcaster::EpisodeUpdate> outbound_updates_;
 
-  std::filesystem::path data_dir_;
-
   std::mutex db_mutex_;
   std::unique_ptr<podcaster::Database> db_;
+
+  std::mutex playback_mtx_;
+  PlaybackController playback_controller_;
 };
 
 int main(int argc, char** argv) {

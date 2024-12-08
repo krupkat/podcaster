@@ -50,11 +50,11 @@ protobuf_generate(TARGET schema
 )
 
 add_executable(hello_muos main.cc sdl_utils.cc imgui_utils.cc podcaster_gui.cc)
-target_link_libraries(hello_muos PRIVATE imgui SDL2_mixer::SDL2_mixer SDL2::SDL2 spdlog::spdlog schema)
+target_link_libraries(hello_muos PRIVATE imgui SDL2::SDL2 spdlog::spdlog schema)
 
 if (PODCASTER_HANDHELD_BUILD)
   target_compile_definitions(hello_muos PRIVATE PODCASTER_HANDHELD_BUILD)
 endif()
 
-add_executable(podcaster podcaster.cc database.cc)
-target_link_libraries(podcaster PRIVATE curlpp::curlpp schema protobuf::libprotobuf spdlog::spdlog pugixml::static)
+add_executable(podcaster podcaster.cc database.cc sdl_utils.cc)
+target_link_libraries(podcaster PRIVATE curlpp::curlpp schema protobuf::libprotobuf spdlog::spdlog pugixml::static SDL2::SDL2 SDL2_mixer::SDL2_mixer)

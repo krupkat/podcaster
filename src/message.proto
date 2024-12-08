@@ -9,12 +9,25 @@ enum DownloadStatus {
   DOWNLOAD_SUCCESS = 3;
 }
 
+enum PlaybackStatus {
+  NOT_PLAYING = 0;
+  PLAYING = 1;
+  PAUSED = 2;
+}
+
+message PlaybackProgress {
+  int32 elapsed_ms = 1;
+  int32 total_ms = 2;
+}
+
 message Episode {
   string episode_uri = 1;
   string title = 2;
   string description = 3;
   DownloadStatus download_status = 4;
   float download_progress = 6;
+  PlaybackStatus playback_status = 7;
+  PlaybackProgress playback_progress = 8;
 }
 
 message Podcast {
@@ -39,14 +52,27 @@ message EpisodeUpdate {
   oneof status {
     DownloadStatus new_download_status = 3;
     float new_download_progress = 4;
+    PlaybackStatus new_playback_status = 5;
+    PlaybackProgress new_playback_progress = 6;
   }
 }
+
+// message PlaybackUpdate {
+//   EpisodeUri uri = 1;
+//   PlaybackProgress new_playback_progress = 2;
+// }
 
 service Podcaster {
   rpc State (Empty) returns (DatabaseState) {}
   rpc Refresh (Empty) returns (DatabaseState) {}
   rpc EpisodeUpdates (Empty) returns (stream EpisodeUpdate) {}
+  // rpc QueryPlaybackUpdate (Empty) returns (PlaybackUpdate) {}
   rpc Download (EpisodeUri) returns (Empty) {}
+  rpc Play (EpisodeUri) returns (Empty) {}
+  rpc Pause (EpisodeUri) returns (Empty) {}
+  rpc Resume (EpisodeUri) returns (Empty) {}
+  rpc Stop (EpisodeUri) returns (Empty) {}
+  rpc Delete (EpisodeUri) returns (Empty) {} 
 }
 
 message Config {

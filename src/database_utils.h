@@ -41,9 +41,16 @@ inline void ApplyUpdate(const EpisodeUpdate& update, DatabaseState* state) {
     case EpisodeUpdate::StatusCase::kNewDownloadProgress:
       episode.value()->set_download_progress(update.new_download_progress());
       break;
+    case EpisodeUpdate::StatusCase::kNewPlaybackStatus:
+      episode.value()->set_playback_status(update.new_playback_status());
+      break;
+    case EpisodeUpdate::StatusCase::kNewPlaybackProgress:
+      episode.value()->mutable_playback_progress()->MergeFrom(
+          update.new_playback_progress());
+      break;
     default:
       break;
   }
 }
 
-}  // namespace podcaster
+}  // namespace podcaster::utils

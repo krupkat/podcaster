@@ -7,7 +7,6 @@
 #include <vector>
 
 #include <SDL.h>
-#include <SDL_mixer.h>
 #include <SDL_video.h>
 #include <spdlog/spdlog.h>
 
@@ -24,16 +23,6 @@ void VerifyVersion() {
                compiled.minor, compiled.patch);
   spdlog::info("Linking against SDL version {}.{}.{}", linked.major,
                linked.minor, linked.patch);
-
-  SDL_version compiled_mixer;
-  SDL_MIXER_VERSION(&compiled_mixer);
-  const SDL_version* linked_mixer = Mix_Linked_Version();
-
-  spdlog::info("Compiled against SDL_mixer version {}.{}.{}",
-               compiled_mixer.major, compiled_mixer.minor,
-               compiled_mixer.patch);
-  spdlog::info("Linking against SDL_mixer version {}.{}.{}",
-               linked_mixer->major, linked_mixer->minor, linked_mixer->patch);
 }
 
 int FindDriver(std::string target_driver) {
