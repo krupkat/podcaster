@@ -37,7 +37,10 @@ inline SDLMixerContext InitMix() {
     utils::Throw<std::runtime_error>("Error initializing SDL_mixer: {}",
                                      Mix_GetError());
   }
-  auto sdl_mixer_quit = utils::DestructorCallback([] { Mix_Quit(); });
+  auto sdl_mixer_quit = utils::DestructorCallback([] {
+    Mix_CloseAudio();
+    Mix_Quit();
+  });
   return SDLMixerContext{std::move(sdl_ctx), std::move(sdl_mixer_quit)};
 }
 

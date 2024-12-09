@@ -2,6 +2,7 @@
 #include <future>
 #include <iterator>
 #include <mutex>
+#include <signal.h>  // NOLINT(modernize-deprecated-headers)
 #include <vector>
 
 #include <curlpp/cURLpp.hpp>
@@ -173,6 +174,11 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   class PlaybackController {
    public:
     PlaybackController(PodcasterImpl* impl) : impl_(impl) {}
+    ~PlaybackController() {
+      if (music_) {
+        Mix_HaltMusic();
+      }
+    }
 
     void Play(const podcaster::EpisodeUri& uri) {
       if (music_) {
@@ -245,7 +251,6 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     }
 
    private:
-    sdl::SDLMixerContext sdl_mixer_ctx_ = sdl::InitMix();
     std::optional<Music> music_;
 
     PodcasterImpl* impl_;
@@ -415,8 +420,27 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   PlaybackController playback_controller_;
 };
 
+std::atomic<int> cancel{0};
+
+using SignalHandler = void (*)(int);
+
+void CancelHandler(int /*signal*/) {
+  cancel.fetch_add(1);
+  cancel.notify_one();
+}
+
+void RegisterInterruptHandler(SignalHandler handler) {
+  struct sigaction action;
+  action.sa_handler = handler;
+  sigfillset(&action.sa_mask);
+  action.sa_flags = SA_RESETHAND;
+  sigaction(SIGINT, &action, nullptr);
+}
+
 int main(int argc, char** argv) {
   curlpp::Cleanup cleanup;
+  sdl::SDLMixerContext sdl_mixer_ctx = sdl::InitMix();
+  RegisterInterruptHandler(CancelHandler);
 
   std::filesystem::path data_dir = argv[1];
   if (!data_dir.is_absolute()) {
@@ -431,5 +455,7 @@ int main(int argc, char** argv) {
   builder.RegisterService(&service);
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
-  server->Wait();
+
+  cancel.wait(0);
+  server->Shutdown();
 }
