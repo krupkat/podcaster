@@ -20,7 +20,8 @@ enum class ActionType {
   kPauseEpisode,
   kResumeEpisode,
   kStopEpisode,
-  kDeleteEpisode
+  kDeleteEpisode,
+  kFlipPanes
 };
 
 struct EpisodeExtra {
@@ -77,10 +78,7 @@ class PodcasterClient {
     grpc::Status status = reader->Finish();
     if (!status.ok()) {
       spdlog::error("Read updates failed: {}", status.error_message());
-    } else {
-      spdlog::info("Read updates completed");
     }
-
     return updates;
   }
 
@@ -125,15 +123,16 @@ class PodcasterGui {
     state_ = client_.GetState();
   }
 
-  void Run();
+  void Run(const Action& incoming_action);
 
  private:
-  Action Draw();
+  Action Draw(const Action& incoming_action);
 
   PodcasterClient client_;
   DatabaseState state_;
 
   std::future<DatabaseState> refresh_future_;
+  int selected_tab_ = 0;
 };
 
 }  // namespace podcaster

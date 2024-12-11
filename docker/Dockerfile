@@ -22,17 +22,18 @@ RUN pip3 install conan --break-system-packages
 ENV CONAN_HOME=/root/.conan
 COPY conan_profile_default /root/.conan/profiles/default
 COPY conan_profile_aarch64 /root/.conan/profiles/aarch64
+COPY settings_user.yml /root/.conan/settings_user.yml
 
 # install build dependencies
 
 RUN --mount=type=tmpfs,target=/build \
-    --mount=source=capnproto.py,target=/build/conanfile.py \
+    --mount=source=grpc.py,target=/build/conanfile.py \
     cd /build && \
     conan install . --build missing && \
-    source capnproto_env.sh && \
-    ln -s `which capnp` /usr/local/bin/capnp && \
-    ln -s `which capnpc-c++` /usr/local/bin/capnpc-c++ && \
-    source deactivate_capnproto_env.sh
+    source grpc_env.sh && \
+    ln -s `which grpc_cpp_plugin` /usr/local/bin/grpc_cpp_plugin && \
+    ln -s `which protoc` /usr/local/bin/protoc && \
+    source deactivate_grpc_env.sh
 
 ENV PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
 

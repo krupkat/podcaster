@@ -58,3 +58,5 @@ endif()
 
 add_executable(podcaster podcaster.cc database.cc sdl_utils.cc)
 target_link_libraries(podcaster PRIVATE curlpp::curlpp schema protobuf::libprotobuf spdlog::spdlog pugixml::static SDL2::SDL2 SDL2_mixer::SDL2_mixer)
+
+install(TARGETS hello_muos podcaster RUNTIME)

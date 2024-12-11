@@ -10,7 +10,8 @@ Action DrawEpisode(const Podcast& podcast, const Episode& episode) {
   Action action = {};
   ImGui::PushID(episode.episode_uri().c_str());
   ImGuiTreeNodeFlags extra_flags =
-      episode.download_status() == DownloadStatus::DOWNLOAD_SUCCESS
+      episode.download_status() == DownloadStatus::DOWNLOAD_SUCCESS ||
+              episode.download_status() == DownloadStatus::DOWNLOAD_IN_PROGRESS
           ? ImGuiTreeNodeFlags_DefaultOpen
           : 0;
 
@@ -65,18 +66,19 @@ Action DrawEpisode(const Podcast& podcast, const Episode& episode) {
         ImGui::SameLine();
       }
       if (episode.download_status() == DownloadStatus::DOWNLOAD_IN_PROGRESS) {
-        std::string label = fmt::format("Downloading: {:.0f}%",
+        std::string label = std::format("Downloading: {:.0f}%",
                                         episode.download_progress() * 100.0f);
         ImGui::ProgressBar(episode.download_progress(), ImVec2(-1.0f, 0.f),
                            label.c_str());
         ImGui::SameLine();
       }
-      if (int start = episode.playback_progress().elapsed_ms(); start > 1) {
+      if (int start = episode.playback_progress().elapsed_ms(); start > 0) {
         int end = episode.playback_progress().total_ms();
         std::string name = episode.playback_status() == PlaybackStatus::PLAYING
                                ? "Playing"
                                : "Progress";
-        std::string label = fmt::format("{}: {}s/{}s", name, start, end);
+        std::string label =
+            std::format("{}: {} s / {} s", name, start / 1000, end / 1000);
         ImGui::ProgressBar(static_cast<float>(start) / end, ImVec2(-1.0f, 0.f),
                            label.c_str());
       }
@@ -88,7 +90,7 @@ Action DrawEpisode(const Podcast& podcast, const Episode& episode) {
   return action;
 }
 
-Action PodcasterGui::Draw() {
+Action PodcasterGui::Draw(const Action& incoming_action) {
   Action action = {};
 
   const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -107,36 +109,53 @@ Action PodcasterGui::Draw() {
     action |= {ActionType::kRefresh};
   }
 
-  ImGui::Spacing();
-  ImGui::SeparatorText("Downloaded");
+  ImGui::SeparatorText("Episodes");
 
-  for (const auto& podcast : state_.podcasts()) {
-    for (auto iter = podcast.episodes().rbegin();
-         iter != podcast.episodes().rend(); ++iter) {
-      const auto& episode = *iter;
-      if (episode.download_status() == DownloadStatus::DOWNLOAD_SUCCESS) {
-        action |= DrawEpisode(podcast, episode);
-      }
-    }
-  }
+  ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
+  if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags)) {
+    ImGuiTabItemFlags flags =
+        selected_tab_ == 1 and incoming_action.type == ActionType::kFlipPanes
+            ? ImGuiTabItemFlags_SetSelected
+            : 0;
 
-  ImGui::Spacing();
-  ImGui::SeparatorText("Available to download");
-
-  for (const auto& podcast : state_.podcasts()) {
-    ImGui::PushID(podcast.podcast_uri().c_str());
-    if (ImGui::TreeNodeEx(
-            podcast.title().c_str(),
-            ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_Framed)) {
-      for (auto iter = podcast.episodes().rbegin();
-           iter != podcast.episodes().rend(); ++iter) {
-        const auto& episode = *iter;
-        ImGui::PushID(episode.episode_uri().c_str());
-        action |= DrawEpisode(podcast, episode);
+    if (ImGui::BeginTabItem("Available to download", nullptr, flags)) {
+      selected_tab_ = 0;
+      for (const auto& podcast : state_.podcasts()) {
+        ImGui::PushID(podcast.podcast_uri().c_str());
+        if (ImGui::TreeNodeEx(podcast.title().c_str(),
+                              ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                                  ImGuiTreeNodeFlags_Framed |
+                                  ImGuiTreeNodeFlags_DefaultOpen)) {
+          for (auto iter = podcast.episodes().rbegin();
+               iter != podcast.episodes().rend(); ++iter) {
+            const auto& episode = *iter;
+            ImGui::PushID(episode.episode_uri().c_str());
+            action |= DrawEpisode(podcast, episode);
+            ImGui::PopID();
+          }
+        }
         ImGui::PopID();
       }
+      ImGui::EndTabItem();
     }
-    ImGui::PopID();
+
+    flags = selected_tab_ == 0 && incoming_action.type == ActionType::kFlipPanes
+                ? ImGuiTabItemFlags_SetSelected
+                : 0;
+    if (ImGui::BeginTabItem("Downloaded", nullptr, flags)) {
+      selected_tab_ = 1;
+      for (const auto& podcast : state_.podcasts()) {
+        for (auto iter = podcast.episodes().rbegin();
+             iter != podcast.episodes().rend(); ++iter) {
+          const auto& episode = *iter;
+          if (episode.download_status() == DownloadStatus::DOWNLOAD_SUCCESS) {
+            action |= DrawEpisode(podcast, episode);
+          }
+        }
+      }
+      ImGui::EndTabItem();
+    }
+    ImGui::EndTabBar();
   }
 
   ImGui::End();
@@ -144,8 +163,8 @@ Action PodcasterGui::Draw() {
   return action;
 }
 
-void PodcasterGui::Run() {
-  auto action = Draw();
+void PodcasterGui::Run(const Action& incoming_action) {
+  Action action = Draw(incoming_action);
 
   switch (action.type) {
     case ActionType::kRefresh:

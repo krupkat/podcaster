@@ -5,7 +5,9 @@
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_sdlrenderer2.h>
 #include <SDL.h>
+#include <SDL_events.h>
 #include <SDL_gamecontroller.h>
+#include <SDL_keycode.h>
 #include <spdlog/spdlog.h>
 
 #include "imgui_utils.h"
@@ -60,6 +62,8 @@ int main(int /*unused*/, char** /*unused*/) {
   bool quit = false;
 
   while (!quit) {
+    podcaster::Action action = {podcaster::ActionType::kIdle};
+
     while (SDL_PollEvent(&event) > 0) {
       ImGui_ImplSDL2_ProcessEvent(&event);
       switch (event.type) {
@@ -70,7 +74,20 @@ int main(int /*unused*/, char** /*unused*/) {
           if (event.cbutton.button == SDL_CONTROLLER_BUTTON_GUIDE) {
             quit = true;
           }
+          if (event.cbutton.button == SDL_CONTROLLER_BUTTON_LEFTSHOULDER ||
+              event.cbutton.button == SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) {
+            action |= podcaster::Action{podcaster::ActionType::kFlipPanes};
+          }
+          break;
         }
+        case SDL_KEYDOWN: {
+          if (event.key.keysym.sym == SDLK_f) {
+            action |= podcaster::Action{podcaster::ActionType::kFlipPanes};
+          }
+          break;
+        }
+        default:
+          break;
       }
     }
 
@@ -79,7 +96,7 @@ int main(int /*unused*/, char** /*unused*/) {
 
     imgui::Render(
         [&]() {
-          podcaster_gui.Run();
+          podcaster_gui.Run(action);
           // ImGui::ShowDemoWindow();
         },
         window_ctx.renderer.get());

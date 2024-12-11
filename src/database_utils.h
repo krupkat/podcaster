@@ -45,9 +45,12 @@ inline void ApplyUpdate(const EpisodeUpdate& update, DatabaseState* state) {
       episode.value()->set_playback_status(update.new_playback_status());
       break;
     case EpisodeUpdate::StatusCase::kNewPlaybackProgress:
-      episode.value()->mutable_playback_progress()->MergeFrom(
+      episode.value()->mutable_playback_progress()->set_elapsed_ms(
           update.new_playback_progress());
       break;
+    case EpisodeUpdate::StatusCase::kNewPlaybackDuration:
+      episode.value()->mutable_playback_progress()->set_total_ms(
+          update.new_playback_duration());
     default:
       break;
   }

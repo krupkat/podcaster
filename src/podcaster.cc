@@ -35,10 +35,19 @@ podcaster::Podcast DonwloadAndParseFeed(
     const std::string& feed_uri, const std::filesystem::path& cache_dir) {
   std::stringstream feed;
 
-  curlpp::Easy my_request;
-  my_request.setOpt<curlpp::options::Url>(feed_uri);
-  my_request.setOpt<curlpp::options::WriteStream>(&feed);
-  my_request.perform();
+  try {
+    curlpp::Easy my_request;
+    my_request.setOpt<curlpp::options::Url>(feed_uri);
+    my_request.setOpt<curlpp::options::WriteStream>(&feed);
+#ifdef PODCASTER_HANDHELD_BUILD
+    my_request.setOpt<curlpp::options::CaInfo>(
+        "/etc/ssl/certs/ca-certificates.crt");
+#endif
+    my_request.perform();
+  } catch (const std::exception& e) {
+    spdlog::error("Failed to download feed: {}", e.what());
+    return podcaster::Podcast();
+  }
 
   pugi::xml_document doc;
   pugi::xml_parse_result result = doc.load(feed);
@@ -131,6 +140,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   grpc::Status EpisodeUpdates(
       grpc::ServerContext* context, const podcaster::Empty* request,
       grpc::ServerWriter<podcaster::EpisodeUpdate>* response) override {
+    playback_controller_.UpdatePlayback();
     std::lock_guard<std::mutex> lock(updates_mtx_);
     for (const auto& update : outbound_updates_) {
       response->Write(update);
@@ -183,7 +193,8 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     void Play(const podcaster::EpisodeUri& uri) {
       if (music_) {
         auto position = Mix_GetMusicPosition(music_->ptr.get());
-        impl_->QueuePlaybackProgress(music_->uri, position * 1000., 0);
+        impl_->QueuePlaybackProgress(music_->uri, position * 1000.,
+                                     QueueFlags::kPersist);
         impl_->QueuePlaybackStatus(music_->uri,
                                    podcaster::PlaybackStatus::NOT_PLAYING);
         Mix_HaltMusic();
@@ -211,7 +222,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
           if (int duration_ms = episode.value()->playback_progress().total_ms();
               duration_ms == 0) {
             auto duration = Mix_MusicDuration(music_->ptr.get());
-            impl_->QueuePlaybackProgress(uri, 0, duration * 1000.);
+            impl_->QueuePlaybackDuration(uri, duration * 1000.);
           }
         }
       }
@@ -221,7 +232,8 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
       if (music_ and uri.podcast_uri() == music_->uri.podcast_uri() and
           uri.episode_uri() == music_->uri.episode_uri()) {
         auto position = Mix_GetMusicPosition(music_->ptr.get());
-        impl_->QueuePlaybackProgress(music_->uri, position * 1000., 0);
+        impl_->QueuePlaybackProgress(music_->uri, position * 1000.,
+                                     QueueFlags::kPersist);
         Mix_PauseMusic();
         impl_->QueuePlaybackStatus(music_->uri,
                                    podcaster::PlaybackStatus::PAUSED);
@@ -229,11 +241,9 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     }
 
     void Resume(const podcaster::EpisodeUri& uri) {
-      spdlog::info("Resume");
       if (music_ and uri.podcast_uri() == music_->uri.podcast_uri() and
           uri.episode_uri() == music_->uri.episode_uri()) {
         Mix_ResumeMusic();
-        spdlog::info("Resumed");
         impl_->QueuePlaybackStatus(music_->uri,
                                    podcaster::PlaybackStatus::PLAYING);
       }
@@ -242,11 +252,23 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     void Stop(const podcaster::EpisodeUri& uri) {
       if (music_ and uri.podcast_uri() == music_->uri.podcast_uri() and
           uri.episode_uri() == music_->uri.episode_uri()) {
-        impl_->QueuePlaybackProgress(music_->uri, 1, 0);
+        impl_->QueuePlaybackProgress(music_->uri, 0, QueueFlags::kPersist);
         Mix_HaltMusic();
         impl_->QueuePlaybackStatus(music_->uri,
                                    podcaster::PlaybackStatus::NOT_PLAYING);
         music_.reset();
+      }
+    }
+
+    void UpdatePlayback() {
+      if (music_) {
+        static int counter = 0;
+        QueueFlags flags = QueueFlags::kTransient;
+        if (counter++ % 60 == 0) {
+          flags = QueueFlags::kPersist;
+        }
+        auto position = Mix_GetMusicPosition(music_->ptr.get());
+        impl_->QueuePlaybackProgress(music_->uri, position * 1000., flags);
       }
     }
 
@@ -297,6 +319,8 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
         QueueDownloadProgress(*request, 0);
         QueueDownloadStatus(*request,
                             podcaster::DownloadStatus::NOT_DOWNLOADED);
+        QueuePlaybackProgress(*request, 0, QueueFlags::kPersist);
+        QueuePlaybackDuration(*request, 0);
       }
     }
     return grpc::Status::OK;
@@ -319,16 +343,26 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
         return;
       }
 
-      curlpp::Easy my_request;
-      my_request.setOpt<curlpp::options::Url>(uri.episode_uri());
-      my_request.setOpt<curlpp::options::WriteStream>(&download_file);
+      try {
+        curlpp::Easy my_request;
+        my_request.setOpt<curlpp::options::Url>(uri.episode_uri());
+        my_request.setOpt<curlpp::options::WriteStream>(&download_file);
+#ifdef PODCASTER_HANDHELD_BUILD
+        my_request.setOpt<curlpp::options::CaInfo>(
+            "/etc/ssl/certs/ca-certificates.crt");
+#endif
 
-      XferInfoCallbackFunctor xfer_callback(this, uri);
-      my_request.getCurlHandle().option(CURLOPT_XFERINFOFUNCTION,
-                                        XferInfoCallback);
-      my_request.getCurlHandle().option(CURLOPT_NOPROGRESS, 0L);
-      my_request.getCurlHandle().option(CURLOPT_XFERINFODATA, &xfer_callback);
-      my_request.perform();
+        XferInfoCallbackFunctor xfer_callback(this, uri);
+        my_request.getCurlHandle().option(CURLOPT_XFERINFOFUNCTION,
+                                          XferInfoCallback);
+        my_request.getCurlHandle().option(CURLOPT_NOPROGRESS, 0L);
+        my_request.getCurlHandle().option(CURLOPT_XFERINFODATA, &xfer_callback);
+        my_request.perform();
+      } catch (const std::exception& e) {
+        spdlog::error("Failed to download episode: {}", e.what());
+        QueueDownloadStatus(uri, podcaster::DownloadStatus::DOWNLOAD_ERROR);
+        return;
+      }
 
       QueueDownloadStatus(uri, podcaster::DownloadStatus::DOWNLOAD_SUCCESS);
     });
@@ -350,8 +384,8 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   }
 
  private:
-  void QueueUpdate(const podcaster::EpisodeUpdate& update,
-                   bool persist = false) {
+  enum class QueueFlags { kTransient, kPersist };
+  void QueueUpdate(const podcaster::EpisodeUpdate& update, QueueFlags flags) {
     {
       std::lock_guard<std::mutex> lock(updates_mtx_);
       // cleanup superseded updates
@@ -365,7 +399,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     {
       std::lock_guard<std::mutex> lock(db_mutex_);
       db_->ApplyUpdate(update);
-      if (persist) {
+      if (flags == QueueFlags::kPersist) {
         db_->SaveState();
       }
     }
@@ -376,7 +410,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     podcaster::EpisodeUpdate update;
     update.mutable_uri()->CopyFrom(request);
     update.set_new_download_status(status);
-    QueueUpdate(update, true);
+    QueueUpdate(update, QueueFlags::kPersist);
   }
 
   void QueueDownloadProgress(const podcaster::EpisodeUri& request,
@@ -384,7 +418,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     podcaster::EpisodeUpdate update;
     update.mutable_uri()->CopyFrom(request);
     update.set_new_download_progress(progress);
-    QueueUpdate(update);
+    QueueUpdate(update, QueueFlags::kTransient);
   }
 
   void QueuePlaybackStatus(const podcaster::EpisodeUri& request,
@@ -392,17 +426,23 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     podcaster::EpisodeUpdate update;
     update.mutable_uri()->CopyFrom(request);
     update.set_new_playback_status(status);
-    QueueUpdate(update);
+    QueueUpdate(update, QueueFlags::kPersist);
   }
 
   void QueuePlaybackProgress(const podcaster::EpisodeUri& request,
-                             int position_ms, int duration_ms) {
+                             int position_ms, QueueFlags flags) {
     podcaster::EpisodeUpdate update;
     update.mutable_uri()->CopyFrom(request);
-    auto* progress = update.mutable_new_playback_progress();
-    progress->set_elapsed_ms(position_ms);
-    progress->set_total_ms(duration_ms);
-    QueueUpdate(update);
+    update.set_new_playback_progress(position_ms);
+    QueueUpdate(update, flags);
+  }
+
+  void QueuePlaybackDuration(const podcaster::EpisodeUri& request,
+                             int duration_ms) {
+    podcaster::EpisodeUpdate update;
+    update.mutable_uri()->CopyFrom(request);
+    update.set_new_playback_duration(duration_ms);
+    QueueUpdate(update, QueueFlags::kPersist);
   }
 
   std::filesystem::path data_dir_;

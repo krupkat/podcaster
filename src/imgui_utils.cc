@@ -44,6 +44,11 @@ ImGuiContext Init(std::filesystem::path root, SDL_Window* window,
   auto imgui_sdl_renderer_backend_quit =
       utils::DestructorCallback([] { ImGui_ImplSDLRenderer2_Shutdown(); });
 
+  float scale = 1.8;
+  auto font = imgui_io.Fonts->AddFontFromFileTTF("NotoSans-Regular.ttf",
+                                                 std::roundf(13 * scale));
+  ImGui::GetStyle().ScaleAllSizes(scale);
+
   return {std::move(imgui_ini_file), std::move(imgui_quit),
           std::move(imgui_sdl_backend_quit),
           std::move(imgui_sdl_renderer_backend_quit)};

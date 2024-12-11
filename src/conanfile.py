@@ -26,11 +26,20 @@ class PodcasterRecipe(ConanFile):
         "sdl/*:vulkan": False,
         "sdl_mixer/*:shared": True,
         "sdl_mixer/*:opus": False,
-        "capnproto/*:shared": False,
-        "capnproto/*:with_openssl": False,
         "imgui/*:shared": False,
         "spdlog/*:shared": False,
         "spdlog/*:use_std_fmt": True,
+        "grpc/*:codegen": True,
+        "grpc/*:cpp_plugin": True,
+        "grpc/*:csharp_ext": False,
+        "grpc/*:php_plugin": False,
+        "grpc/*:node_plugin": False,
+        "grpc/*:otel_plugin": False,
+        "grpc/*:ruby_plugin": False,
+        "grpc/*:csharp_plugin": False,
+        "grpc/*:python_plugin": False,
+        "grpc/*:with_libsystemd": False,
+        "grpc/*:objective_c_plugin": False
     }
 
     def requirements(self):
@@ -38,13 +47,13 @@ class PodcasterRecipe(ConanFile):
         self.requires("sdl/2.28.5")
         self.requires("sdl_mixer/2.8.0")
         self.requires("spdlog/1.15.0")
-        self.requires("capnproto/1.0.2")
         self.requires("curlpp/0.8.1.cci.20240530")
+        self.requires("grpc/1.67.1")
+        self.requires("pugixml/1.14")
 
     def generate(self):
         tc = CMakeToolchain(self)
         tc.variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
-        tc.variables["CMAKE_INTERPROCEDURAL_OPTIMIZATION"] = "ON"
         tc.variables["PODCASTER_BUILD_IMGUI_EXTRA"] = "ON"
         tc.variables["PODCASTER_CURLPP_FROM_PKGCONFIG"] = "OFF"
         tc.variables["PODCASTER_HANDHELD_BUILD"] = "ON"

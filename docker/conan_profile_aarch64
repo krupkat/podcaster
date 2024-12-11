@@ -1,8 +1,9 @@
 [settings]
 os=Linux
+os.distro=muOS
 arch=armv8
 compiler=gcc
-build_type=Release
+build_type=MinSizeRel
 compiler.cppstd=20
 compiler.libcxx=libstdc++11
 compiler.version=13
@@ -15,4 +16,6 @@ LD=aarch64-linux-gnu-ld
 [conf]
 tools.system.package_manager:mode=install
 tools.cmake.cmaketoolchain:generator=Ninja
-tools.cmake.cmaketoolchain:extra_variables={'CMAKE_INTERPROCEDURAL_OPTIMIZATION': 'ON'}
+tools.build:cxxflags=["-mcpu=cortex-a53 -ffunction-sections -fdata-sections"]
+tools.build:cflags=["-mcpu=cortex-a53 -ffunction-sections -fdata-sections"]
+tools.build:exelinkflags=["-Wl,-gc-sections"]

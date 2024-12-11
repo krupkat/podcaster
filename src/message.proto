@@ -53,20 +53,15 @@ message EpisodeUpdate {
     DownloadStatus new_download_status = 3;
     float new_download_progress = 4;
     PlaybackStatus new_playback_status = 5;
-    PlaybackProgress new_playback_progress = 6;
+    int32 new_playback_progress = 6;
+    int32 new_playback_duration = 7;
   }
 }
-
-// message PlaybackUpdate {
-//   EpisodeUri uri = 1;
-//   PlaybackProgress new_playback_progress = 2;
-// }
 
 service Podcaster {
   rpc State (Empty) returns (DatabaseState) {}
   rpc Refresh (Empty) returns (DatabaseState) {}
   rpc EpisodeUpdates (Empty) returns (stream EpisodeUpdate) {}
-  // rpc QueryPlaybackUpdate (Empty) returns (PlaybackUpdate) {}
   rpc Download (EpisodeUri) returns (Empty) {}
   rpc Play (EpisodeUri) returns (Empty) {}
   rpc Pause (EpisodeUri) returns (Empty) {}

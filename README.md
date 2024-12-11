@@ -10,11 +10,9 @@ docker compose build
 docker compose run -d podcaster
 ```
 
-2. Attach to running container (Dev Containers)
-
-3. Build app:
+2. Build app:
 ```
 conan install . --build missing -pr:b=default -pr:h=aarch64
-cmake --preset conan-release
-cmake --build --preset conan-release
+cmake --preset conan-minsizerel
+cmake --build --preset conan-minsizerel --target install/strip
 ```
