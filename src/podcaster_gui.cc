@@ -3,6 +3,7 @@
 #include <imgui.h>
 
 #include "database_utils.h"
+#include "imgui_utils.h"
 
 namespace podcaster {
 
@@ -94,6 +95,12 @@ Action DrawEpisode(const Podcast& podcast, const Episode& episode) {
   return action;
 }
 
+void DrawRefreshAnimation() {
+  static int frame_counter = 0;
+  static const char* dots[] = {"", ".", "..", "..."};
+  ImGui::Text("In progress%s", dots[(frame_counter++ / 16) % 4]);
+}
+
 Action PodcasterGui::Draw(const Action& incoming_action) {
   Action action = {};
 
@@ -109,9 +116,28 @@ Action PodcasterGui::Draw(const Action& incoming_action) {
 
   ImGui::SeparatorText("Podcaster 0.0.1");
 
-  if (ImGui::Button("Refresh")) {
-    action |= {ActionType::kRefresh};
+  bool top_row_in_focus = false;
+  bool active_refresh = refresh_future_.valid();
+
+  imgui::EnableIf(not active_refresh, [&] {
+    if (ImGui::Button("Refresh")) {
+      action |= {ActionType::kRefresh};
+    }
+  });
+  if (active_refresh) {
+    ImGui::SameLine();
+    DrawRefreshAnimation();
   }
+
+  top_row_in_focus |= ImGui::IsItemFocused();
+
+  // scroll to top if first item is focused
+  if (top_row_in_focus) {
+    if (not last_top_row_in_focus_) {
+      ImGui::SetScrollY(0.0f);
+    }
+  }
+  last_top_row_in_focus_ = top_row_in_focus;
 
   ImGui::SeparatorText("Episodes");
 
@@ -166,9 +192,21 @@ Action PodcasterGui::Draw(const Action& incoming_action) {
   ImGui::Button("About");
   ImGui::SameLine();
   ImGui::Button("Licenses");
+  ImGui::SameLine();
+  ImGui::Text("Service status: %s",
+              service_status_ == ServiceStatus::kOnline ? "Online" : "Offline");
   ImGui::End();
 
   return action;
+}
+
+void PodcasterGui::UpdateServiceStatus(ServiceStatus status) {
+  if (service_status_ != status) {
+    if (status == ServiceStatus::kOnline) {
+      state_ = client_.GetState();
+    }
+    service_status_ = status;
+  }
 }
 
 void PodcasterGui::Run(const Action& incoming_action) {
@@ -208,10 +246,14 @@ void PodcasterGui::Run(const Action& incoming_action) {
       state_ = refresh_future_.get();
     }
 
-    auto episode_updates = client_.ReadUpdates();
-    for (const auto& update : episode_updates) {
-      utils::ApplyUpdate(update, &state_);
+    ServiceStatus new_status = ServiceStatus::kOffline;
+    if (auto episode_updates = client_.ReadUpdates(); episode_updates) {
+      for (const auto& update : episode_updates.value()) {
+        utils::ApplyUpdate(update, &state_);
+      }
+      new_status = ServiceStatus::kOnline;
     }
+    UpdateServiceStatus(new_status);
   }
 }
 

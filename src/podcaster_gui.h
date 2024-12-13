@@ -81,7 +81,7 @@ class PodcasterClient {
     return response;
   }
 
-  std::vector<EpisodeUpdate> ReadUpdates() {
+  std::optional<std::vector<EpisodeUpdate>> ReadUpdates() {
     grpc::ClientContext context;
     Empty request;
     std::unique_ptr<grpc::ClientReader<EpisodeUpdate>> reader(
@@ -97,6 +97,7 @@ class PodcasterClient {
     grpc::Status status = reader->Finish();
     if (!status.ok()) {
       spdlog::error("Read updates failed: {}", status.error_message());
+      return {};
     }
     return updates;
   }
@@ -139,6 +140,8 @@ class PodcasterClient {
   std::unique_ptr<podcaster::Podcaster::Stub> stub_;
 };
 
+enum class ServiceStatus { kOnline, kOffline };
+
 class PodcasterGui {
  public:
   PodcasterGui(PodcasterClient client) : client_(std::move(client)) {
@@ -146,6 +149,8 @@ class PodcasterGui {
   }
 
   void Run(const Action& incoming_action);
+
+  void UpdateServiceStatus(ServiceStatus status);
 
  private:
   Action Draw(const Action& incoming_action);
@@ -155,6 +160,9 @@ class PodcasterGui {
 
   std::future<DatabaseState> refresh_future_;
   int selected_tab_ = 0;
+  bool last_top_row_in_focus_ = true;
+
+  ServiceStatus service_status_ = ServiceStatus::kOnline;
 };
 
 }  // namespace podcaster

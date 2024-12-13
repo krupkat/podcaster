@@ -31,4 +31,15 @@ void Render(TFunc render_func, SDL_Renderer* renderer) {
   ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
 }
 
+template <typename TCallbackType>
+void EnableIf(bool condition, TCallbackType callback) {
+  if (!condition) {
+    ImGui::BeginDisabled();
+  }
+  callback();
+  if (!condition) {
+    ImGui::EndDisabled();
+  }
+}
+
 }  // namespace imgui
