@@ -1,6 +1,7 @@
 #include <filesystem>
 #include <future>
 #include <iterator>
+#include <memory>
 #include <mutex>
 #include <signal.h>  // NOLINT(modernize-deprecated-headers)
 #include <vector>
@@ -21,6 +22,13 @@
 #include "message.pb.h"
 #include "sdl_mixer_utils.h"
 #include "utils.h"
+
+std::atomic<int> cancel_service{0};
+
+void CancelHandler(int /*signal*/) {
+  cancel_service.fetch_add(1);
+  cancel_service.notify_one();
+}
 
 std::string DownloadFilename(const std::string& episode_uri) {
   auto last_slash = std::find(episode_uri.rbegin(), episode_uri.rend(), '/');
@@ -85,12 +93,32 @@ podcaster::Podcast DonwloadAndParseFeed(
   return podcast;
 }
 
+struct ActiveDownload {
+  podcaster::EpisodeUri uri;
+  std::unique_ptr<std::atomic_bool> cancel;
+  std::future<void> future;
+};
+
 class PodcasterImpl final : public podcaster::Podcaster::Service {
  public:
   explicit PodcasterImpl(std::filesystem::path data_dir)
       : data_dir_(data_dir),
         db_(std::make_unique<podcaster::Database>(data_dir)),
         playback_controller_(this) {}
+
+  ~PodcasterImpl() {
+    std::lock_guard<std::mutex> lock(download_mtx_);
+    for (auto& download : downloads_in_progress_) {
+      download.cancel->store(true);
+      // ignore exceptions
+      download.future.wait();
+    }
+  }
+
+  PodcasterImpl(const PodcasterImpl&) = delete;
+  PodcasterImpl& operator=(const PodcasterImpl&) = delete;
+  PodcasterImpl(PodcasterImpl&&) = delete;
+  PodcasterImpl& operator=(PodcasterImpl&&) = delete;
 
   grpc::Status State(grpc::ServerContext* context,
                      const podcaster::Empty* request,
@@ -152,11 +180,15 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   class XferInfoCallbackFunctor {
    public:
     XferInfoCallbackFunctor(PodcasterImpl* impl,
-                            const podcaster::EpisodeUri& uri)
-        : impl_(impl), uri_(uri) {}
+                            const podcaster::EpisodeUri& uri,
+                            std::atomic_bool* cancel)
+        : impl_(impl), uri_(uri), cancel_(cancel) {}
 
     int Execute(curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal,
                 curl_off_t ulnow) {
+      if (cancel_->load()) {
+        return 1;
+      }
       if (dltotal == 0) {
         return 0;
       }
@@ -168,6 +200,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
    private:
     PodcasterImpl* impl_;
     podcaster::EpisodeUri uri_;
+    std::atomic_bool* cancel_;
   };
 
   static int XferInfoCallback(XferInfoCallbackFunctor* functor,
@@ -187,6 +220,8 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     ~PlaybackController() {
       if (music_) {
         Mix_HaltMusic();
+        impl_->QueuePlaybackStatus(music_->uri,
+                                   podcaster::PlaybackStatus::NOT_PLAYING);
       }
     }
 
@@ -241,17 +276,27 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     }
 
     void Resume(const podcaster::EpisodeUri& uri) {
-      if (music_ and uri.podcast_uri() == music_->uri.podcast_uri() and
-          uri.episode_uri() == music_->uri.episode_uri()) {
+      if (not music_) {
+        // recovery, state was paused when service shut down
+        Play(uri);
+      } else if (uri.podcast_uri() == music_->uri.podcast_uri() and
+                 uri.episode_uri() == music_->uri.episode_uri()) {
         Mix_ResumeMusic();
         impl_->QueuePlaybackStatus(music_->uri,
                                    podcaster::PlaybackStatus::PLAYING);
+      } else {
+        // recovery, state was paused when service shut down
+        // other episode is playing
+        Play(uri);
       }
     }
 
     void Stop(const podcaster::EpisodeUri& uri) {
-      if (music_ and uri.podcast_uri() == music_->uri.podcast_uri() and
-          uri.episode_uri() == music_->uri.episode_uri()) {
+      if (not music_) {
+        // recovery, state was playing when service shut down
+        impl_->QueuePlaybackStatus(uri, podcaster::PlaybackStatus::NOT_PLAYING);
+      } else if (uri.podcast_uri() == music_->uri.podcast_uri() and
+                 uri.episode_uri() == music_->uri.episode_uri()) {
         impl_->QueuePlaybackProgress(music_->uri, 0, QueueFlags::kPersist);
         Mix_HaltMusic();
         impl_->QueuePlaybackStatus(music_->uri,
@@ -270,6 +315,10 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
         auto position = Mix_GetMusicPosition(music_->ptr.get());
         impl_->QueuePlaybackProgress(music_->uri, position * 1000., flags);
       }
+    }
+
+    bool IsPlaying() const {
+      return music_ and Mix_PlayingMusic() == 1 and Mix_PausedMusic() == 0;
     }
 
    private:
@@ -306,6 +355,15 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     return grpc::Status::OK;
   }
 
+  grpc::Status ShutdownIfNotPlaying(grpc::ServerContext* context,
+                                    const podcaster::Empty* request,
+                                    podcaster::Empty* response) override {
+    if (not playback_controller_.IsPlaying()) {
+      CancelHandler(0);
+    }
+    return grpc::Status::OK;
+  }
+
   grpc::Status Delete(grpc::ServerContext* context,
                       const podcaster::EpisodeUri* request,
                       podcaster::Empty* response) override {
@@ -329,57 +387,89 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   grpc::Status Download(grpc::ServerContext* context,
                         const podcaster::EpisodeUri* request,
                         podcaster::Empty* response) override {
-    auto result_future = std::async(std::launch::async, [this, uri = *request] {
-      QueueDownloadStatus(uri, podcaster::DownloadStatus::DOWNLOAD_IN_PROGRESS);
+    auto cancel_flag = std::make_unique<std::atomic_bool>(false);
 
-      std::filesystem::path download_path =
-          data_dir_ / DownloadFilename(uri.episode_uri());
-      std::ofstream download_file(download_path, std::ios::binary);
+    auto result_future = std::async(
+        std::launch::async,
+        [this, uri = *request, cancel_ptr = cancel_flag.get()] {
+          QueueDownloadStatus(uri,
+                              podcaster::DownloadStatus::DOWNLOAD_IN_PROGRESS);
 
-      if (not download_file.is_open()) {
-        spdlog::error("Failed to open download file: {}",
-                      download_path.string());
-        QueueDownloadStatus(uri, podcaster::DownloadStatus::DOWNLOAD_ERROR);
-        return;
-      }
+          std::filesystem::path download_path =
+              data_dir_ / DownloadFilename(uri.episode_uri());
+          std::ofstream download_file(download_path, std::ios::binary);
 
-      try {
-        curlpp::Easy my_request;
-        my_request.setOpt<curlpp::options::Url>(uri.episode_uri());
-        my_request.setOpt<curlpp::options::WriteStream>(&download_file);
+          if (not download_file.is_open()) {
+            spdlog::error("Failed to open download file: {}",
+                          download_path.string());
+            QueueDownloadStatus(uri, podcaster::DownloadStatus::DOWNLOAD_ERROR);
+            return;
+          }
+
+          try {
+            curlpp::Easy my_request;
+            my_request.setOpt<curlpp::options::Url>(uri.episode_uri());
+            my_request.setOpt<curlpp::options::WriteStream>(&download_file);
 #ifdef PODCASTER_HANDHELD_BUILD
-        my_request.setOpt<curlpp::options::CaInfo>(
-            "/etc/ssl/certs/ca-certificates.crt");
+            my_request.setOpt<curlpp::options::CaInfo>(
+                "/etc/ssl/certs/ca-certificates.crt");
 #endif
 
-        XferInfoCallbackFunctor xfer_callback(this, uri);
-        my_request.getCurlHandle().option(CURLOPT_XFERINFOFUNCTION,
-                                          XferInfoCallback);
-        my_request.getCurlHandle().option(CURLOPT_NOPROGRESS, 0L);
-        my_request.getCurlHandle().option(CURLOPT_XFERINFODATA, &xfer_callback);
-        my_request.perform();
-      } catch (const std::exception& e) {
-        spdlog::error("Failed to download episode: {}", e.what());
-        QueueDownloadStatus(uri, podcaster::DownloadStatus::DOWNLOAD_ERROR);
-        return;
-      }
+            XferInfoCallbackFunctor xfer_callback(this, uri, cancel_ptr);
+            my_request.getCurlHandle().option(CURLOPT_XFERINFOFUNCTION,
+                                              XferInfoCallback);
+            my_request.getCurlHandle().option(CURLOPT_NOPROGRESS, 0L);
+            my_request.getCurlHandle().option(CURLOPT_XFERINFODATA,
+                                              &xfer_callback);
+            my_request.perform();
+          } catch (const std::exception& e) {
+            spdlog::error("Failed to download episode: {}", e.what());
+            QueueDownloadStatus(uri, podcaster::DownloadStatus::DOWNLOAD_ERROR);
+            return;
+          }
 
-      QueueDownloadStatus(uri, podcaster::DownloadStatus::DOWNLOAD_SUCCESS);
-    });
+          QueueDownloadStatus(uri, podcaster::DownloadStatus::DOWNLOAD_SUCCESS);
+        });
 
     {
       // cleanup completed downloads
       std::lock_guard<std::mutex> lock(download_mtx_);
-      std::erase_if(downloads_in_progress_, [](auto& future) {
-        if (utils::IsReady(future)) {
-          future.get();  // may throw
+      std::erase_if(downloads_in_progress_, [](auto& download) {
+        if (utils::IsReady(download.future)) {
+          download.future.get();  // may throw
           return true;
         }
         return false;
       });
-      downloads_in_progress_.push_back(std::move(result_future));
+      downloads_in_progress_.push_back(
+          ActiveDownload{.uri = *request,
+                         .cancel = std::move(cancel_flag),
+                         .future = std::move(result_future)});
     }
 
+    return grpc::Status::OK;
+  }
+
+  grpc::Status CancelDownload(grpc::ServerContext* context,
+                              const podcaster::EpisodeUri* request,
+                              podcaster::Empty* response) override {
+    bool live_cancel = false;
+
+    {
+      std::lock_guard<std::mutex> lock(download_mtx_);
+      for (auto& download : downloads_in_progress_) {
+        if (download.uri.podcast_uri() == request->podcast_uri() and
+            download.uri.episode_uri() == request->episode_uri()) {
+          download.cancel->store(true);
+          live_cancel = true;
+        }
+      }
+    }
+
+    if (not live_cancel) {
+      // cleanup in case of unclean shutdown
+      QueueDownloadStatus(*request, podcaster::DownloadStatus::NOT_DOWNLOADED);
+    }
     return grpc::Status::OK;
   }
 
@@ -448,7 +538,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   std::filesystem::path data_dir_;
 
   std::mutex download_mtx_;
-  std::vector<std::future<void>> downloads_in_progress_;
+  std::vector<ActiveDownload> downloads_in_progress_;
 
   std::mutex updates_mtx_;
   std::vector<podcaster::EpisodeUpdate> outbound_updates_;
@@ -460,14 +550,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   PlaybackController playback_controller_;
 };
 
-std::atomic<int> cancel{0};
-
 using SignalHandler = void (*)(int);
-
-void CancelHandler(int /*signal*/) {
-  cancel.fetch_add(1);
-  cancel.notify_one();
-}
 
 void RegisterInterruptHandler(SignalHandler handler) {
   struct sigaction action;
@@ -496,6 +579,6 @@ int main(int argc, char** argv) {
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
 
-  cancel.wait(0);
+  cancel_service.wait(0);
   server->Shutdown();
 }

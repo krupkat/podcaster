@@ -29,6 +29,7 @@ ImGuiContext Init(std::filesystem::path root, SDL_Window* window,
   imgui_io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   imgui_io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
   imgui_io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  imgui_io.ConfigNavCursorVisibleAlways = true;
 
   if (not ImGui_ImplSDL2_InitForSDLRenderer(window, renderer)) {
     utils::Throw<std::runtime_error>(

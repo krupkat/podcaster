@@ -63,11 +63,13 @@ service Podcaster {
   rpc Refresh (Empty) returns (DatabaseState) {}
   rpc EpisodeUpdates (Empty) returns (stream EpisodeUpdate) {}
   rpc Download (EpisodeUri) returns (Empty) {}
+  rpc CancelDownload (EpisodeUri) returns (Empty) {}
   rpc Play (EpisodeUri) returns (Empty) {}
   rpc Pause (EpisodeUri) returns (Empty) {}
   rpc Resume (EpisodeUri) returns (Empty) {}
   rpc Stop (EpisodeUri) returns (Empty) {}
   rpc Delete (EpisodeUri) returns (Empty) {} 
+  rpc ShutdownIfNotPlaying (Empty) returns (Empty) {}
 }
 
 message Config {

@@ -71,7 +71,8 @@ int main(int /*unused*/, char** /*unused*/) {
           quit = true;
           break;
         case SDL_CONTROLLERBUTTONDOWN: {
-          if (event.cbutton.button == SDL_CONTROLLER_BUTTON_GUIDE) {
+          if (event.cbutton.button == SDL_CONTROLLER_BUTTON_BACK ||
+              event.cbutton.button == SDL_CONTROLLER_BUTTON_START) {
             quit = true;
           }
           if (event.cbutton.button == SDL_CONTROLLER_BUTTON_LEFTSHOULDER ||

@@ -66,6 +66,10 @@ Action DrawEpisode(const Podcast& podcast, const Episode& episode) {
         ImGui::SameLine();
       }
       if (episode.download_status() == DownloadStatus::DOWNLOAD_IN_PROGRESS) {
+        if (ImGui::Button("Cancel")) {
+          action |= make_episode_action(ActionType::kCancelDownload);
+        }
+        ImGui::SameLine();
         std::string label = std::format("Downloading: {:.0f}%",
                                         episode.download_progress() * 100.0f);
         ImGui::ProgressBar(episode.download_progress(), ImVec2(-1.0f, 0.f),
@@ -158,6 +162,10 @@ Action PodcasterGui::Draw(const Action& incoming_action) {
     ImGui::EndTabBar();
   }
 
+  ImGui::SeparatorText("Help");
+  ImGui::Button("About");
+  ImGui::SameLine();
+  ImGui::Button("Licenses");
   ImGui::End();
 
   return action;
@@ -172,6 +180,8 @@ void PodcasterGui::Run(const Action& incoming_action) {
           std::async(std::launch::async, [&] { return client_.Refresh(); });
       break;
     case ActionType::kDownloadEpisode:
+      [[fallthrough]];
+    case ActionType::kCancelDownload:
       [[fallthrough]];
     case ActionType::kPauseEpisode:
       [[fallthrough]];

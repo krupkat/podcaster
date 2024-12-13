@@ -21,6 +21,7 @@ enum class ActionType {
   kResumeEpisode,
   kStopEpisode,
   kDeleteEpisode,
+  kCancelDownload,
   kFlipPanes
 };
 
@@ -45,6 +46,24 @@ class PodcasterClient {
  public:
   PodcasterClient(std::shared_ptr<grpc::Channel> channel)
       : stub_(Podcaster::NewStub(channel)) {}
+
+  ~PodcasterClient() {
+    if (stub_) {
+      Shutdown();
+    }
+  }
+
+  PodcasterClient(const PodcasterClient& other) = delete;
+  PodcasterClient& operator=(const PodcasterClient& other) = delete;
+  PodcasterClient(PodcasterClient&& other) = default;
+  PodcasterClient& operator=(PodcasterClient&& other) = default;
+
+  void Shutdown() {
+    grpc::ClientContext context;
+    Empty request;
+    Empty response;
+    stub_->ShutdownIfNotPlaying(&context, request, &response);
+  }
 
   DatabaseState GetState() {
     grpc::ClientContext context;
@@ -92,6 +111,9 @@ class PodcasterClient {
     switch (action) {
       case ActionType::kDownloadEpisode:
         stub_->Download(&context, uri, &response);
+        break;
+      case ActionType::kCancelDownload:
+        stub_->CancelDownload(&context, uri, &response);
         break;
       case ActionType::kPlayEpisode:
         stub_->Play(&context, uri, &response);
