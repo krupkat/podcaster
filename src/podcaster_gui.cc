@@ -7,7 +7,8 @@
 
 namespace podcaster {
 
-Action DrawEpisode(const Podcast& podcast, const Episode& episode) {
+Action DrawEpisode(const Podcast& podcast, const Episode& episode,
+                   bool show_podcast_title = false) {
   Action action = {};
   ImGui::PushID(episode.episode_uri().c_str());
   ImGuiTreeNodeFlags extra_flags =
@@ -28,8 +29,9 @@ Action DrawEpisode(const Podcast& podcast, const Episode& episode) {
                           ImGuiChildFlags_AutoResizeY |
                               ImGuiChildFlags_NavFlattened |
                               ImGuiChildFlags_FrameStyle)) {
-      ImGui::TextWrapped("%s", episode.description().c_str());
-
+      if (episode.description_short().size() > 0) {
+        ImGui::TextWrapped("%s", episode.description_short().c_str());
+      }
       if (episode.download_status() == DownloadStatus::DOWNLOAD_SUCCESS) {
         if (episode.playback_status() == PlaybackStatus::NOT_PLAYING) {
           if (ImGui::Button("Play")) {
@@ -65,6 +67,16 @@ Action DrawEpisode(const Podcast& podcast, const Episode& episode) {
           action |= make_episode_action(ActionType::kDownloadEpisode);
         }
         ImGui::SameLine();
+      }
+      if (episode.description_long().size() > 0) {
+        if (ImGui::Button("Show more")) {
+          ImGui::OpenPopup("Show more");
+        }
+        ImGui::SameLine();
+        if (ImGui::BeginPopup("Show more")) {
+          ImGui::TextWrapped("%s", episode.description_long().c_str());
+          ImGui::EndPopup();
+        }
       }
       if (episode.download_status() == DownloadStatus::DOWNLOAD_IN_PROGRESS) {
         if (ImGui::Button("Cancel")) {

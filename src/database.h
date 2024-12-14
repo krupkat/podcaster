@@ -92,7 +92,7 @@ class Database {
       int latest_episode_index = updated_podcast.episodes_size() - 1;
       if (latest_episode_index >= 0) {
         EpisodeUri uri;
-        uri.set_podcast_uri(podcast->podcast_uri());
+        uri.set_podcast_uri(updated_podcast.podcast_uri());
         uri.set_episode_uri(
             updated_podcast.episodes().at(latest_episode_index).episode_uri());
         new_episodes.push_back(uri);

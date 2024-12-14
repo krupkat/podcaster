@@ -29,8 +29,10 @@ pkgs.mkShell {
     curlpp
     curl
     imgui_docking
+    html-tidy
     pugixml
     clang-tools_18
+    gdb
   ];
 
 }

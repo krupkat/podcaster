@@ -50,6 +50,7 @@ class PodcasterRecipe(ConanFile):
         self.requires("curlpp/0.8.1.cci.20240530")
         self.requires("grpc/1.67.1")
         self.requires("pugixml/1.14")
+        self.requires("tidy-html5/5.8.0")
 
     def generate(self):
         tc = CMakeToolchain(self)

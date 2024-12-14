@@ -4,7 +4,7 @@ project(podcaster)
 
 # defaults work on nix
 option(PODCASTER_BUILD_IMGUI_EXTRA "Build ImGui with extra features" OFF)
-option(PODCASTER_CURLPP_FROM_PKGCONFIG "Use curlpp from pkgconfig" ON)
+option(PODCASTER_PREFER_PKGCONFIG "Use curlpp from pkgconfig" ON)
 option(PODCASTER_HANDHELD_BUILD "Build for handheld devices" OFF)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -23,12 +23,15 @@ if (PODCASTER_BUILD_IMGUI_EXTRA)
   add_subdirectory(external/imgui) # conan
 endif()
 
-if(PODCASTER_CURLPP_FROM_PKGCONFIG)
+if(PODCASTER_PREFER_PKGCONFIG)
     find_package(PkgConfig REQUIRED) # nix
     pkg_check_modules(CURLPP REQUIRED IMPORTED_TARGET curlpp)
     add_library(curlpp::curlpp ALIAS PkgConfig::CURLPP)
+    pkg_check_modules(TIDY REQUIRED IMPORTED_TARGET tidy)
+    add_library(tidy-html5::tidy-html5 ALIAS PkgConfig::TIDY)
 else()
     find_package(curlpp REQUIRED) # conan
+    find_package(tidy-html5 REQUIRED)
 endif()
 
 set(PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto)
@@ -50,13 +53,13 @@ protobuf_generate(TARGET schema
 )
 
 add_executable(hello_muos main.cc sdl_utils.cc imgui_utils.cc podcaster_gui.cc)
-target_link_libraries(hello_muos PRIVATE imgui SDL2::SDL2 spdlog::spdlog schema)
+target_link_libraries(hello_muos PRIVATE imgui::imgui SDL2::SDL2 spdlog::spdlog schema)
 
 if (PODCASTER_HANDHELD_BUILD)
   target_compile_definitions(hello_muos PRIVATE PODCASTER_HANDHELD_BUILD)
 endif()
 
-add_executable(podcaster podcaster.cc database.cc sdl_utils.cc)
-target_link_libraries(podcaster PRIVATE curlpp::curlpp schema protobuf::libprotobuf spdlog::spdlog pugixml::static SDL2::SDL2 SDL2_mixer::SDL2_mixer)
+add_executable(podcaster podcaster.cc database.cc sdl_utils.cc tidy_utils.cc)
+target_link_libraries(podcaster PRIVATE curlpp::curlpp schema protobuf::libprotobuf spdlog::spdlog pugixml::static tidy-html5::tidy-html5 SDL2::SDL2 SDL2_mixer::SDL2_mixer)
 
 install(TARGETS hello_muos podcaster RUNTIME)

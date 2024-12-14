@@ -23,8 +23,9 @@ message PlaybackProgress {
 message Episode {
   string episode_uri = 1;
   string title = 2;
-  string description = 3;
-  DownloadStatus download_status = 4;
+  string description_short = 3;
+  string description_long = 4;
+  DownloadStatus download_status = 5;
   float download_progress = 6;
   PlaybackStatus playback_status = 7;
   PlaybackProgress playback_progress = 8;

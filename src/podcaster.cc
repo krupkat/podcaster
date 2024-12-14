@@ -4,6 +4,7 @@
 #include <memory>
 #include <mutex>
 #include <signal.h>  // NOLINT(modernize-deprecated-headers)
+#include <sstream>
 #include <vector>
 
 #include <curlpp/cURLpp.hpp>
@@ -21,7 +22,11 @@
 #include "message.grpc.pb.h"
 #include "message.pb.h"
 #include "sdl_mixer_utils.h"
+#include "tidy_utils.h"
 #include "utils.h"
+
+constexpr int kMaxEpisodesPerPodcast = 10;
+constexpr int kPreviewLength = 200;
 
 std::atomic<int> cancel_service{0};
 
@@ -37,6 +42,99 @@ std::string DownloadFilename(const std::string& episode_uri) {
   }
   int cut = std::distance(last_slash, episode_uri.rend());
   return episode_uri.substr(cut);
+}
+
+class HTMLStripWalker : public pugi::xml_tree_walker {
+ public:
+  HTMLStripWalker() {}
+
+  bool for_each(pugi::xml_node& node) override {
+    if (node.type() == pugi::node_pcdata) {
+      Save(node.value());
+    }
+    if (node.type() == pugi::node_element) {
+      if (std::string name = node.name(); name == "p" || name == "br") {
+        NewLine();
+      }
+    }
+    return true;
+  }
+
+  bool end(pugi::xml_node& node) override {
+    if (character_count_ > kPreviewLength) {
+      result_short_ << "...";
+    }
+    return true;
+  }
+
+  std::string ResultShort() const { return result_short_.str(); }
+  std::string ResultLong() const { return result_long_.str(); }
+
+ private:
+  void Save(const char* str) {
+    for (const char* c = str; *c != 0; ++c) {
+      Put(*c);
+    }
+  }
+
+  void NewLine() { Put('\n'); }
+
+  void Put(char c) {
+    // skip leading whitespace
+    if (first_char_) {
+      if (c == ' ' || c == '\n') {
+        return;
+      }
+      first_char_ = false;
+    }
+
+    // max 2 consecutive newlines
+    if (c == '\n') {
+      consecutive_newlines_++;
+      if (consecutive_newlines_ > 2) {
+        return;
+      }
+    } else {
+      consecutive_newlines_ = 0;
+    }
+
+    // first kPreviewLength characters are short description
+    if (character_count_ < kPreviewLength) {
+      result_short_ << c;
+    } else {
+      result_long_ << c;
+    }
+    character_count_++;
+  }
+
+  bool first_char_ = true;
+  int character_count_ = 0;
+  int consecutive_newlines_ = 0;
+
+  std::stringstream result_short_;
+  std::stringstream result_long_;
+};
+
+struct ParsedDescription {
+  std::string short_description;
+  std::string long_description;
+};
+
+ParsedDescription ParseDescription(const std::string& input) {
+  auto xhtml = tidy::ConvertToXHTML(input);
+
+  pugi::xml_document doc;
+  pugi::xml_parse_result xml_result = doc.load_buffer_inplace(
+      xhtml.data(), xhtml.size(), pugi::parse_default, pugi::encoding_auto);
+
+  if (!xml_result) {
+    spdlog::error("Failed to parse XHTML: {}", xml_result.description());
+    return {input};
+  }
+
+  HTMLStripWalker walker;
+  doc.traverse(walker);
+  return {walker.ResultShort(), walker.ResultLong()};
 }
 
 podcaster::Podcast DonwloadAndParseFeed(
@@ -76,7 +174,10 @@ podcaster::Podcast DonwloadAndParseFeed(
   podcast.set_podcast_uri(feed_uri);
   podcast.set_title(title.text().as_string());
 
-  for (const auto& episode : episodes) {
+  const auto* first =
+      std::max(episodes.begin(), episodes.end() - kMaxEpisodesPerPodcast);
+  for (const auto* iter = first; iter != episodes.end(); iter++) {
+    const auto& episode = *iter;
     const auto& episode_node = episode.node();
 
     auto title = episode_node.select_node("title").node();
@@ -84,9 +185,13 @@ podcaster::Podcast DonwloadAndParseFeed(
     auto audio_uri =
         episode_node.select_node("enclosure").node().attribute("url");
 
+    auto parsed_description = ParseDescription(description.text().as_string());
+
     auto* episode_message = podcast.add_episodes();
     episode_message->set_title(title.text().as_string());
-    episode_message->set_description(description.text().as_string());
+    episode_message->set_description_short(
+        parsed_description.short_description);
+    episode_message->set_description_long(parsed_description.long_description);
     episode_message->set_episode_uri(audio_uri.as_string());
   }
 
@@ -410,6 +515,9 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
             curlpp::Easy my_request;
             my_request.setOpt<curlpp::options::Url>(uri.episode_uri());
             my_request.setOpt<curlpp::options::WriteStream>(&download_file);
+            my_request.setOpt<curlpp::options::FollowLocation>(true);
+
+            spdlog::info("Downloading: {}", uri.episode_uri());
 #ifdef PODCASTER_HANDHELD_BUILD
             my_request.setOpt<curlpp::options::CaInfo>(
                 "/etc/ssl/certs/ca-certificates.crt");
@@ -577,7 +685,7 @@ int main(int argc, char** argv) {
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
+  spdlog::info("Server listening on {}", server_address);
 
   cancel_service.wait(0);
   server->Shutdown();
