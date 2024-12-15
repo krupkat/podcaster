@@ -79,11 +79,29 @@ int main(int /*unused*/, char** /*unused*/) {
               event.cbutton.button == SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) {
             action |= podcaster::Action{podcaster::ActionType::kFlipPanes};
           }
+          if (event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_UP) {
+            action |= podcaster::Action{podcaster::ActionType::kScrollUp};
+          }
+          if (event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_DOWN) {
+            action |= podcaster::Action{podcaster::ActionType::kScrollDown};
+          }
+          if (event.cbutton.button == SDL_CONTROLLER_BUTTON_B) {
+            action |= podcaster::Action{podcaster::ActionType::kBack};
+          }
           break;
         }
         case SDL_KEYDOWN: {
           if (event.key.keysym.sym == SDLK_f) {
             action |= podcaster::Action{podcaster::ActionType::kFlipPanes};
+          }
+          if (event.key.keysym.sym == SDLK_t) {
+            action |= podcaster::Action{podcaster::ActionType::kScrollUp};
+          }
+          if (event.key.keysym.sym == SDLK_g) {
+            action |= podcaster::Action{podcaster::ActionType::kScrollDown};
+          }
+          if (event.key.keysym.sym == SDLK_r) {
+            action |= podcaster::Action{podcaster::ActionType::kBack};
           }
           break;
         }

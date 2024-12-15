@@ -5,42 +5,15 @@
 #include <variant>
 
 #include <grpcpp/create_channel.h>
+#include <imgui.h>
 #include <spdlog/spdlog.h>
 
+#include "action.h"
 #include "message.grpc.pb.h"
 #include "message.pb.h"
+#include "simple_window.h"
 
 namespace podcaster {
-
-enum class ActionType {
-  kIdle,
-  kRefresh,
-  kDownloadEpisode,
-  kPlayEpisode,
-  kPauseEpisode,
-  kResumeEpisode,
-  kStopEpisode,
-  kDeleteEpisode,
-  kCancelDownload,
-  kFlipPanes
-};
-
-struct EpisodeExtra {
-  std::string podcast_uri;
-  std::string episode_uri;
-};
-
-struct Action {
-  ActionType type = ActionType::kIdle;
-  std::variant<std::monostate, EpisodeExtra> extra;
-};
-
-inline Action& operator|=(Action& lhs, const Action& rhs) {
-  if (rhs.type != ActionType::kIdle) {
-    lhs = rhs;
-  }
-  return lhs;
-}
 
 class PodcasterClient {
  public:
@@ -142,6 +115,35 @@ class PodcasterClient {
 
 enum class ServiceStatus { kOnline, kOffline };
 
+class ShowMoreWindow : public SimpleWindow<ShowMoreExtra> {
+  const char* Title() const override { return "Episode details"; }
+
+  void OpenImpl(const ShowMoreExtra& extra) override {
+    title_ = extra.episode_title;
+    if (extra.episode_description_long.size() > 0 &&
+        extra.episode_description_short.size() >= 3) {
+      auto ellipsis_idx = extra.episode_description_short.size() - 3;
+      description_ = extra.episode_description_short.substr(0, ellipsis_idx) +
+                     extra.episode_description_long;
+    } else {
+      description_ = extra.episode_description_short;
+    }
+  }
+
+  Action DrawImpl(const Action& incoming_action) override {
+    Action action = {};
+
+    ImGui::Text("%s", title_.c_str());
+    ImGui::Separator();
+    ImGui::TextWrapped("%s", description_.c_str());
+
+    return action;
+  }
+
+  std::string title_;
+  std::string description_;
+};
+
 class PodcasterGui {
  public:
   PodcasterGui(PodcasterClient client) : client_(std::move(client)) {
@@ -155,13 +157,19 @@ class PodcasterGui {
  private:
   Action Draw(const Action& incoming_action);
 
+  // db stuff
   PodcasterClient client_;
   DatabaseState state_;
 
+  // subwindows
+  ShowMoreWindow show_more_window_;
+
+  // futures
   std::future<DatabaseState> refresh_future_;
+
+  // extra gui stuff
   int selected_tab_ = 0;
   bool last_top_row_in_focus_ = true;
-
   ServiceStatus service_status_ = ServiceStatus::kOnline;
 };
 

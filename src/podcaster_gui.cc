@@ -1,5 +1,7 @@
 #include "podcaster_gui.h"
 
+#include <string>
+
 #include <imgui.h>
 
 #include "database_utils.h"
@@ -72,13 +74,11 @@ Action DrawEpisode(const Podcast& podcast, const Episode& episode,
       }
       if (episode.description_long().size() > 0) {
         if (ImGui::Button("Show more")) {
-          ImGui::OpenPopup("Show more");
+          action |= {ActionType::kShowMore,
+                     ShowMoreExtra{episode.title(), episode.description_short(),
+                                   episode.description_long()}};
         }
         ImGui::SameLine();
-        if (ImGui::BeginPopup("Show more")) {
-          ImGui::TextWrapped("%s", episode.description_long().c_str());
-          ImGui::EndPopup();
-        }
       }
       if (episode.download_status() == DownloadStatus::DOWNLOAD_IN_PROGRESS) {
         if (ImGui::Button("Cancel")) {
@@ -232,6 +232,7 @@ void PodcasterGui::UpdateServiceStatus(ServiceStatus status) {
 
 void PodcasterGui::Run(const Action& incoming_action) {
   Action action = Draw(incoming_action);
+  action |= show_more_window_.Draw(incoming_action);
 
   switch (action.type) {
     case ActionType::kRefresh:
@@ -253,6 +254,11 @@ void PodcasterGui::Run(const Action& incoming_action) {
     case ActionType::kPlayEpisode: {
       const auto& extra = std::get<EpisodeExtra>(action.extra);
       client_.EpisodeAction(extra.podcast_uri, extra.episode_uri, action.type);
+      break;
+    }
+    case ActionType::kShowMore: {
+      const auto& extra = std::get<ShowMoreExtra>(action.extra);
+      show_more_window_.Open(extra);
       break;
     }
     default:
