@@ -15,6 +15,7 @@ enum class ActionType {
   kDeleteEpisode,
   kCancelDownload,
   kShowMore,
+  kShowAbout,
   kFlipPanes,
   kScrollUp,
   kScrollDown,

@@ -8,6 +8,8 @@ namespace podcaster {
 
 template <typename TState>
 class SimpleWindow {
+  static constexpr float kPadding = 10.0f;
+
  public:
   void Open(const TState& state) {
     open_ = true;
@@ -18,7 +20,6 @@ class SimpleWindow {
   Action Draw(const Action& incoming_action) {
     Action action = {};
     if (open_) {
-      const float kPadding = 10.0f;
       const ImGuiViewport* viewport = ImGui::GetMainViewport();
       ImGui::SetNextWindowPos(
           ImVec2(viewport->Pos.x + kPadding, viewport->Pos.y + kPadding),

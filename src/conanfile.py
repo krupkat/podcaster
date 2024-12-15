@@ -56,7 +56,7 @@ class PodcasterRecipe(ConanFile):
         tc = CMakeToolchain(self)
         tc.variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
         tc.variables["PODCASTER_BUILD_IMGUI_EXTRA"] = "ON"
-        tc.variables["PODCASTER_CURLPP_FROM_PKGCONFIG"] = "OFF"
+        tc.variables["PODCASTER_PREFER_PKGCONFIG"] = "OFF"
         tc.variables["PODCASTER_HANDHELD_BUILD"] = "ON"
         tc.generate()
 

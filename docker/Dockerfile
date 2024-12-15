@@ -27,18 +27,21 @@ COPY settings_user.yml /root/.conan/settings_user.yml
 # install build dependencies
 
 RUN --mount=type=tmpfs,target=/build \
-    --mount=source=grpc.py,target=/build/conanfile.py \
+    --mount=source=host_tools.py,target=/build/conanfile.py \
+    --mount=type=cache,target=/root/.conan/p \
     cd /build && \
     conan install . --build missing && \
-    source grpc_env.sh && \
+    source host_tools_env.sh && \
     ln -s `which grpc_cpp_plugin` /usr/local/bin/grpc_cpp_plugin && \
     ln -s `which protoc` /usr/local/bin/protoc && \
-    source deactivate_grpc_env.sh
+    ln -s `which upx` /usr/local/bin/upx && \
+    source deactivate_host_tools_env.sh
 
 ENV PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
 
 RUN --mount=type=tmpfs,target=/build \
     --mount=from=src,source=conanfile.py,target=/build/conanfile.py \
+    --mount=type=cache,target=/root/.conan/p \
     cd /build && \
     conan install . --build missing -pr:b=default -pr:h=aarch64
 

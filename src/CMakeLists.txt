@@ -21,6 +21,8 @@ find_package(pugixml REQUIRED)
 find_package(imgui REQUIRED)
 if (PODCASTER_BUILD_IMGUI_EXTRA)
   add_subdirectory(external/imgui) # conan
+else()
+  add_library(imgui ALIAS imgui::imgui) # nix
 endif()
 
 if(PODCASTER_PREFER_PKGCONFIG)
@@ -52,8 +54,9 @@ protobuf_generate(TARGET schema
   GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
 )
 
-add_executable(hello_muos main.cc sdl_utils.cc imgui_utils.cc podcaster_gui.cc)
-target_link_libraries(hello_muos PRIVATE imgui::imgui SDL2::SDL2 spdlog::spdlog schema)
+add_executable(hello_muos main.cc sdl_utils.cc imgui_utils.cc podcaster_gui.cc panels/about_window.cc)
+target_link_libraries(hello_muos PRIVATE imgui SDL2::SDL2 spdlog::spdlog schema)
+target_include_directories(hello_muos PRIVATE .)
 
 if (PODCASTER_HANDHELD_BUILD)
   target_compile_definitions(hello_muos PRIVATE PODCASTER_HANDHELD_BUILD)

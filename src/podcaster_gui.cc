@@ -11,6 +11,25 @@ namespace podcaster {
 
 float ToMB(int bytes) { return static_cast<float>(bytes) / (1024 * 1024); }
 
+std::string ProgressString(int current, int total) {
+  int hours_current = current / 3600;
+  int minutes_current = (current % 3600) / 60;
+  int secs_current = current % 60;
+
+  int hours_total = total / 3600;
+  int minutes_total = (total % 3600) / 60;
+  int secs_total = total % 60;
+
+  if (hours_current > 0 || hours_total > 0) {
+    return std::format("{:02}:{:02}:{:02} / {:02}:{:02}:{:02}", hours_current,
+                       minutes_current, secs_current, hours_total,
+                       minutes_total, secs_total);
+  }
+
+  return std::format("{:02}:{:02} / {:02}:{:02}", minutes_current, secs_current,
+                     minutes_total, secs_total);
+}
+
 Action DrawEpisode(const Podcast& podcast, const Episode& episode,
                    bool show_podcast_title = false) {
   Action action = {};
@@ -100,13 +119,9 @@ Action DrawEpisode(const Podcast& podcast, const Episode& episode,
       }
       if (int start = episode.playback_progress().elapsed_ms(); start > 0) {
         int end = episode.playback_progress().total_ms();
-        std::string name = episode.playback_status() == PlaybackStatus::PLAYING
-                               ? "Playing"
-                               : "Progress";
-        std::string label =
-            std::format("{}: {} s / {} s", name, start / 1000, end / 1000);
+        std::string progress = ProgressString(start / 1000, end / 1000);
         ImGui::ProgressBar(static_cast<float>(start) / end, ImVec2(-1.0f, 0.f),
-                           label.c_str());
+                           progress.c_str());
       }
     }
     ImGui::EndChild();
@@ -210,7 +225,9 @@ Action PodcasterGui::Draw(const Action& incoming_action) {
   }
 
   ImGui::SeparatorText("Help");
-  ImGui::Button("About");
+  if (ImGui::Button("About")) {
+    action |= {ActionType::kShowAbout};
+  }
   ImGui::SameLine();
   ImGui::Button("Licenses");
   ImGui::SameLine();
@@ -233,6 +250,7 @@ void PodcasterGui::UpdateServiceStatus(ServiceStatus status) {
 void PodcasterGui::Run(const Action& incoming_action) {
   Action action = Draw(incoming_action);
   action |= show_more_window_.Draw(incoming_action);
+  action |= about_window_.Draw(incoming_action);
 
   switch (action.type) {
     case ActionType::kRefresh:
@@ -261,6 +279,9 @@ void PodcasterGui::Run(const Action& incoming_action) {
       show_more_window_.Open(extra);
       break;
     }
+    case ActionType::kShowAbout:
+      about_window_.Open(true);
+      break;
     default:
       break;
   }
