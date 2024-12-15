@@ -39,7 +39,8 @@ inline void ApplyUpdate(const EpisodeUpdate& update, DatabaseState* state) {
       episode.value()->set_download_status(update.new_download_status());
       break;
     case EpisodeUpdate::StatusCase::kNewDownloadProgress:
-      episode.value()->set_download_progress(update.new_download_progress());
+      episode.value()->mutable_download_progress()->CopyFrom(
+          update.new_download_progress());
       break;
     case EpisodeUpdate::StatusCase::kNewPlaybackStatus:
       episode.value()->set_playback_status(update.new_playback_status());

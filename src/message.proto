@@ -15,6 +15,11 @@ enum PlaybackStatus {
   PAUSED = 2;
 }
 
+message DownloadProgress {
+  int32 downloaded_bytes = 1;
+  int32 total_bytes = 2;
+}
+
 message PlaybackProgress {
   int32 elapsed_ms = 1;
   int32 total_ms = 2;
@@ -26,7 +31,7 @@ message Episode {
   string description_short = 3;
   string description_long = 4;
   DownloadStatus download_status = 5;
-  float download_progress = 6;
+  DownloadProgress download_progress = 6;
   PlaybackStatus playback_status = 7;
   PlaybackProgress playback_progress = 8;
 }
@@ -52,7 +57,7 @@ message EpisodeUpdate {
   EpisodeUri uri = 1;
   oneof status {
     DownloadStatus new_download_status = 3;
-    float new_download_progress = 4;
+    DownloadProgress new_download_progress = 4;
     PlaybackStatus new_playback_status = 5;
     int32 new_playback_progress = 6;
     int32 new_playback_duration = 7;

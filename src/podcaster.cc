@@ -297,8 +297,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
       if (dltotal == 0) {
         return 0;
       }
-      float progress = static_cast<float>(dlnow) / dltotal;
-      impl_->QueueDownloadProgress(uri_, progress);
+      impl_->QueueDownloadProgress(uri_, dlnow, dltotal);
       return 0;
     }
 
@@ -479,7 +478,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
             data_dir_ / DownloadFilename(request->episode_uri());
         std::filesystem::remove(download_path);
 
-        QueueDownloadProgress(*request, 0);
+        QueueDownloadProgress(*request, 0, 0);
         QueueDownloadStatus(*request,
                             podcaster::DownloadStatus::NOT_DOWNLOADED);
         QueuePlaybackProgress(*request, 0, QueueFlags::kPersist);
@@ -612,10 +611,12 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   }
 
   void QueueDownloadProgress(const podcaster::EpisodeUri& request,
-                             float progress) {
+                             float progress, float size) {
     podcaster::EpisodeUpdate update;
     update.mutable_uri()->CopyFrom(request);
-    update.set_new_download_progress(progress);
+    auto* download_progress = update.mutable_new_download_progress();
+    download_progress->set_downloaded_bytes(progress);
+    download_progress->set_total_bytes(size);
     QueueUpdate(update, QueueFlags::kTransient);
   }
 

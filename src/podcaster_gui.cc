@@ -7,6 +7,8 @@
 
 namespace podcaster {
 
+float ToMB(int bytes) { return static_cast<float>(bytes) / (1024 * 1024); }
+
 Action DrawEpisode(const Podcast& podcast, const Episode& episode,
                    bool show_podcast_title = false) {
   Action action = {};
@@ -83,10 +85,17 @@ Action DrawEpisode(const Podcast& podcast, const Episode& episode,
           action |= make_episode_action(ActionType::kCancelDownload);
         }
         ImGui::SameLine();
-        std::string label = std::format("Downloading: {:.0f}%",
-                                        episode.download_progress() * 100.0f);
-        ImGui::ProgressBar(episode.download_progress(), ImVec2(-1.0f, 0.f),
-                           label.c_str());
+        float progress =
+            episode.download_progress().total_bytes() == 0
+                ? 0.0f
+                : static_cast<float>(
+                      episode.download_progress().downloaded_bytes()) /
+                      episode.download_progress().total_bytes();
+        std::string label =
+            std::format("Downloading: {:.1f} / {:.1f} MB",
+                        ToMB(episode.download_progress().downloaded_bytes()),
+                        ToMB(episode.download_progress().total_bytes()));
+        ImGui::ProgressBar(progress, ImVec2(-1.0f, 0.f), label.c_str());
         ImGui::SameLine();
       }
       if (int start = episode.playback_progress().elapsed_ms(); start > 0) {
