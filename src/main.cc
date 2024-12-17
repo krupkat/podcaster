@@ -94,10 +94,10 @@ int main(int /*unused*/, char** /*unused*/) {
           if (event.key.keysym.sym == SDLK_f) {
             action |= podcaster::Action{podcaster::ActionType::kFlipPanes};
           }
-          if (event.key.keysym.sym == SDLK_t) {
+          if (event.key.keysym.sym == SDLK_UP) {
             action |= podcaster::Action{podcaster::ActionType::kScrollUp};
           }
-          if (event.key.keysym.sym == SDLK_g) {
+          if (event.key.keysym.sym == SDLK_DOWN) {
             action |= podcaster::Action{podcaster::ActionType::kScrollDown};
           }
           if (event.key.keysym.sym == SDLK_r) {

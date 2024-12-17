@@ -4,7 +4,7 @@
 #include "panels/simple_window.h"
 
 namespace podcaster {
-class ShowMoreWindow : public SimpleWindow<ShowMoreExtra> {
+class ShowMoreWindow : public SimpleWindow<ShowMoreExtra, true> {
   const char* Title() const override { return "Episode details"; }
 
   void OpenImpl(const ShowMoreExtra& extra) override {

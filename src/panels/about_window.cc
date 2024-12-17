@@ -2,35 +2,41 @@
 
 #include <imgui.h>
 #include <SDL.h>
+#include <SDL_mixer.h>
 #include <spdlog/spdlog.h>
 
+#include "dependencies.h"
 
 namespace podcaster {
-
-// self.requires("imgui/1.91.5-docking")
-// self.requires("sdl/2.28.5")
-// self.requires("sdl_mixer/2.8.0")
-// self.requires("spdlog/1.15.0")
-// self.requires("curlpp/0.8.1.cci.20240530")
-// self.requires("grpc/1.67.1")
-// self.requires("pugixml/1.14")
-// self.requires("tidy-html5/5.8.0")
 
 Action AboutWindow::DrawImpl(const Action& incoming_action) {
   Action action = {};
 
-  ImGui::TextUnformatted("Podcaster 0.0.1");
+  ImGui::TextUnformatted("Podcaster 0.0.1,");
+  ImGui::SameLine();
+  ImGui::TextLink("GPL v3");
   ImGui::Separator();
-  ImGui::Text("ImGui version: %s", IMGUI_VERSION);
 
-  SDL_version linked;
-  SDL_GetVersion(&linked);
+  SDL_version linked_sdl;
+  SDL_GetVersion(&linked_sdl);
+  const SDL_version* linked_mixer = Mix_Linked_Version();
 
-  ImGui::Text("SDL version: %d.%d.%d", linked.major, linked.minor,
-              linked.patch);
-
-  ImGui::Text("spdlog version: %d.%d.%d", SPDLOG_VER_MAJOR, SPDLOG_VER_MINOR,
-              SPDLOG_VER_PATCH);
+  for (const auto& dep : kDependencies) {
+    if (dep.name == "sdl") {
+      ImGui::Text("%s [system] %d.%d.%d,", dep.name.c_str(), linked_sdl.major,
+                  linked_sdl.minor, linked_sdl.patch);
+    } else if (dep.name == "sdl_mixer") {
+      ImGui::Text("%s [system] %d.%d.%d,", dep.name.c_str(),
+                  linked_mixer->major, linked_mixer->minor,
+                  linked_mixer->patch);
+    } else {
+      ImGui::Text("%s %s,", dep.name.c_str(), dep.version.c_str());
+    }
+    ImGui::SameLine();
+    ImGui::PushID(dep.name.c_str());
+    ImGui::TextLink(dep.license.c_str());
+    ImGui::PopID();
+  }
 
   ImGui::Spacing();
   return action;

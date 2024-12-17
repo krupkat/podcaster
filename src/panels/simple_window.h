@@ -6,7 +6,7 @@
 
 namespace podcaster {
 
-template <typename TState>
+template <typename TState, bool scroll_events = false>
 class SimpleWindow {
   static constexpr float kPadding = 10.0f;
 
@@ -42,14 +42,16 @@ class SimpleWindow {
         if (ImGui::Button("Close")) {
           open_ = false;
         }
-        if (incoming_action.type == ActionType::kScrollUp) {
-          ImGui::SetScrollY(ImGui::GetScrollY() - 100);
-        }
-        if (incoming_action.type == ActionType::kScrollDown) {
-          ImGui::SetScrollY(ImGui::GetScrollY() + 100);
-        }
         if (incoming_action.type == ActionType::kBack) {
           open_ = false;
+        }
+        if constexpr (scroll_events) {
+          if (incoming_action.type == ActionType::kScrollUp) {
+            ImGui::SetScrollY(ImGui::GetScrollY() - 100);
+          }
+          if (incoming_action.type == ActionType::kScrollDown) {
+            ImGui::SetScrollY(ImGui::GetScrollY() + 100);
+          }
         }
       }
       ImGui::End();
