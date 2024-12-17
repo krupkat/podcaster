@@ -32,6 +32,7 @@ Action AboutWindow::DrawImpl(const Action& incoming_action) {
   ImGui::Text("spdlog version: %d.%d.%d", SPDLOG_VER_MAJOR, SPDLOG_VER_MINOR,
               SPDLOG_VER_PATCH);
 
+  ImGui::Spacing();
   return action;
 }
 }  // namespace podcaster

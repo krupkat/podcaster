@@ -33,6 +33,11 @@ pkgs.mkShell {
     pugixml
     clang-tools_18
     gdb
+    conan
+    (python3.withPackages (pkgs: with pkgs; [
+      autopep8
+      jinja2
+    ]))
   ];
 
 }

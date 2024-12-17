@@ -15,7 +15,7 @@ RUN apt install -y --no-install-recommends \
     gcc make cmake ninja-build python3 python3-pip libfile-copy-recursive-perl gcc-13 g++-13 \
     clangd-18 clang-tidy-18 clang-format-18 g++-13-aarch64-linux-gnu gcc-13-aarch64-linux-gnu
 
-RUN pip3 install conan --break-system-packages
+RUN pip3 install conan Jinja2 --break-system-packages
 
 # setup conan
 
@@ -39,10 +39,11 @@ RUN --mount=type=tmpfs,target=/build \
 
 ENV PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
 
-RUN --mount=type=tmpfs,target=/build \
-    --mount=from=src,source=conanfile.py,target=/build/conanfile.py \
+WORKDIR /build
+
+RUN --mount=from=src,source=conanfile.py,target=/build/conanfile.py \
+    --mount=from=src,source=templates,target=/build/templates \
     --mount=type=cache,target=/root/.conan/p \
-    cd /build && \
     conan install . --build missing -pr:b=default -pr:h=aarch64
 
 ENTRYPOINT ["/bin/bash"]

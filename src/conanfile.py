@@ -1,8 +1,24 @@
-import os
+import jinja2
+import collections
+
+from pathlib import Path
 
 from conan import ConanFile
 from conan.tools.cmake import cmake_layout, CMakeToolchain
-from conan.tools.files import copy
+from conan.tools.files import copy, mkdir
+
+
+Dependency = collections.namedtuple(
+    'Dependency', ['name', 'version', 'license', 'license_file'])
+
+
+def load_template(template_src):
+    jinja_templates = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(template_src.parent),
+        autoescape=jinja2.select_autoescape(default=False)
+    )
+    return jinja_templates.get_template(template_src.name)
+
 
 class PodcasterRecipe(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
@@ -52,6 +68,45 @@ class PodcasterRecipe(ConanFile):
         self.requires("pugixml/1.14")
         self.requires("tidy-html5/5.8.0")
 
+    def bundled_dependencies(self):
+        deps = {
+            "sdl": self.dependencies["sdl"],
+            "sdl_mixer": self.dependencies["sdl_mixer"],
+        }
+
+        # exclude sdl and sdl_mixer subdependencies as we're not bundling those (using system libraries)
+
+        for dependency in self.dependencies.direct_host.values():
+            if dependency.ref.name != "sdl" and dependency.ref.name != "sdl_mixer":
+                deps[dependency.ref.name] = dependency
+                for subdep in dependency.dependencies.host.values():
+                    deps[subdep.ref.name] = subdep
+
+        return deps
+
+    def export_licenses(self, deps):
+        licenses = {}
+
+        source_dir = Path(self.source_folder)
+        license_dir = source_dir / "licenses"
+
+        mkdir(self, license_dir)
+        for name, dep in deps.items():
+            dep_license_dir = license_dir / name
+            mkdir(self, dep_license_dir)
+            copy(self, pattern="*", src=Path(dep.package_folder) /
+                 "licenses", dst=dep_license_dir)
+
+            dep_licenses = list(
+                entry for entry in dep_license_dir.iterdir() if entry.is_file())
+            if len(dep_licenses) == 1:
+                licenses[name] = dep_licenses[0].relative_to(source_dir)
+            else:
+                raise Exception(
+                    f"License file for {name} already exists, multiple licenses not supported")
+
+        return licenses
+
     def generate(self):
         tc = CMakeToolchain(self)
         tc.variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
@@ -60,10 +115,25 @@ class PodcasterRecipe(ConanFile):
         tc.variables["PODCASTER_HANDHELD_BUILD"] = "ON"
         tc.generate()
 
+        # extra imgui files
         imgui = self.dependencies["imgui"]
         copy(self, pattern="imgui_impl_sdl*",
-            dst=os.path.join(self.source_folder, "external", "imgui"),
-            src=os.path.join(imgui.package_folder, "res", "bindings"))
+             src=Path(imgui.package_folder) / "res" / "bindings",
+             dst=Path(self.source_folder) / "external" / "imgui")
+
+        # dependency data and license files
+        dependencies = self.bundled_dependencies()
+        licenses = self.export_licenses(dependencies)
+
+        dependency_data = sorted([
+            Dependency(name, dep.ref.version, dep.license, licenses[name])
+            for name, dep in dependencies.items()
+        ])
+
+        dependencies_header_template = load_template(
+            Path(self.source_folder) / "templates" / "dependencies.h")
+        with open(Path(self.source_folder) / "dependencies.h", "w") as f:
+            f.write(dependencies_header_template.render(deps=dependency_data))
 
     def layout(self):
         cmake_layout(self)

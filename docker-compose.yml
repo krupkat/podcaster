@@ -5,5 +5,5 @@ services:
       context: docker
       additional_contexts:
         - src=src
-    volumes:
-      - ./src:/build
+    # volumes:
+    #   - ./src:/build
