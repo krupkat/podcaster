@@ -54,7 +54,7 @@ protobuf_generate(TARGET schema
   GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
 )
 
-add_executable(hello_muos main.cc sdl_utils.cc imgui_utils.cc podcaster_gui.cc panels/about_window.cc)
+add_executable(hello_muos main.cc sdl_utils.cc imgui_utils.cc podcaster_gui.cc panels/about_window.cc panels/license_window.cc)
 target_link_libraries(hello_muos PRIVATE imgui SDL2::SDL2 SDL2_mixer::SDL2_mixer spdlog::spdlog schema)
 target_include_directories(hello_muos PRIVATE .)
 

@@ -6,6 +6,7 @@
 #include <spdlog/spdlog.h>
 
 #include "dependencies.h"
+#include "panels/license_window.h"
 
 namespace podcaster {
 
@@ -34,11 +35,14 @@ Action AboutWindow::DrawImpl(const Action& incoming_action) {
     }
     ImGui::SameLine();
     ImGui::PushID(dep.name.c_str());
-    ImGui::TextLink(dep.license.c_str());
+    if (ImGui::TextLink(dep.license.c_str())) {
+      OpenSubwindow<LicenseWindow>(dep);
+    }
     ImGui::PopID();
   }
 
   ImGui::Spacing();
   return action;
 }
+
 }  // namespace podcaster

@@ -280,7 +280,7 @@ void PodcasterGui::Run(const Action& incoming_action) {
       break;
     }
     case ActionType::kShowAbout:
-      about_window_.Open(true);
+      about_window_.Open();
       break;
     default:
       break;

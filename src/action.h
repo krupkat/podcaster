@@ -44,4 +44,10 @@ inline Action& operator|=(Action& lhs, const Action& rhs) {
   }
   return lhs;
 }
+
+inline Action operator|(const Action& lhs, const Action& rhs) {
+  Action result = lhs;
+  return result |= rhs;
+}
+
 }  // namespace podcaster

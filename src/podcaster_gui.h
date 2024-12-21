@@ -11,6 +11,7 @@
 #include "message.pb.h"
 #include "panels/about_window.h"
 #include "panels/show_more_window.h"
+#include "panels/license_window.h"
 
 namespace podcaster {
 

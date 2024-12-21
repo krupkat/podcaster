@@ -1,25 +1,53 @@
 #pragma once
 
+#include <tuple>
+#include <type_traits>
+
 #include <imgui.h>
 
 #include "action.h"
 
 namespace podcaster {
 
-template <typename TState, bool scroll_events = false>
+struct EmptyState {};
+
+template <typename TState = EmptyState, bool scroll_events = false,
+          typename SubwindowList = std::tuple<>>
 class SimpleWindow {
   static constexpr float kPadding = 10.0f;
 
  public:
-  void Open(const TState& state) {
+  template <typename State = TState>
+  void Open(const State& state)
+    requires(not std::is_same_v<TState, EmptyState>)
+  {
     open_ = true;
     scroll_up_ = true;
     OpenImpl(state);
   }
 
+  void Open()
+    requires std::is_same_v<TState, EmptyState>
+  {
+    open_ = true;
+    scroll_up_ = true;
+  }
+
+  bool IsOpen() const { return open_; }
+
+  template <typename TWindowType, typename... Args>
+  void OpenSubwindow(Args&&... args) {
+    std::get<TWindowType>(subwindows_).Open(std::forward<Args>(args)...);
+  }
+
   Action Draw(const Action& incoming_action) {
     Action action = {};
-    if (open_) {
+
+    bool any_subwindow_open = std::apply(
+        [&](auto&&... subwindow) { return (subwindow.IsOpen() || ...); },
+        subwindows_);
+
+    if (open_ and not any_subwindow_open) {
       const ImGuiViewport* viewport = ImGui::GetMainViewport();
       ImGui::SetNextWindowPos(
           ImVec2(viewport->Pos.x + kPadding, viewport->Pos.y + kPadding),
@@ -56,16 +84,24 @@ class SimpleWindow {
       }
       ImGui::End();
     }
-    return action;
+
+    return std::apply(
+        [&](auto&&... subwindow) {
+          return (action | ... | subwindow.Draw(incoming_action));
+        },
+        subwindows_);
   }
 
  private:
   virtual const char* Title() const = 0;
-  virtual void OpenImpl(const TState& state) = 0;
   virtual Action DrawImpl(const Action& incoming_action) = 0;
+
+  virtual void OpenImpl(const TState& state) {};
 
   bool open_ = false;
   bool scroll_up_ = false;
+
+  SubwindowList subwindows_ = {};
 };
 
 }  // namespace podcaster
