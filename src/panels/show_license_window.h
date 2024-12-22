@@ -1,0 +1,18 @@
+#pragma once
+
+#include "dependencies.h"
+#include "panels/simple_window.h"
+
+namespace podcaster {
+
+class ShowLicenseWindow
+    : public SimpleWindow<Dependency, WindowTraits::kScrollEvents> {
+  const char* Title() const override { return "License"; }
+  Action DrawImpl(const Action& incoming_action) override;
+  void OpenImpl(const Dependency& dep) override;
+
+  Dependency dependency_;
+  std::string license_text_;
+};
+
+}  // namespace podcaster

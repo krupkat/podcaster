@@ -9,17 +9,22 @@
 
 namespace podcaster {
 
-struct EmptyState {};
+struct NoState {};
 
-template <typename TState = EmptyState, bool scroll_events = false,
+enum class WindowTraits {
+  kDefault = 0,
+  kScrollEvents = 1,
+};
+
+template <typename TState = NoState,
+          WindowTraits traits = WindowTraits::kDefault,
           typename SubwindowList = std::tuple<>>
 class SimpleWindow {
   static constexpr float kPadding = 10.0f;
 
  public:
-  template <typename State = TState>
-  void Open(const State& state)
-    requires(not std::is_same_v<TState, EmptyState>)
+  void Open(const TState& state)
+    requires(not std::is_same_v<TState, NoState>)
   {
     open_ = true;
     scroll_up_ = true;
@@ -27,10 +32,11 @@ class SimpleWindow {
   }
 
   void Open()
-    requires std::is_same_v<TState, EmptyState>
+    requires std::is_same_v<TState, NoState>
   {
     open_ = true;
     scroll_up_ = true;
+    OpenImpl();
   }
 
   bool IsOpen() const { return open_; }
@@ -73,7 +79,7 @@ class SimpleWindow {
         if (incoming_action.type == ActionType::kBack) {
           open_ = false;
         }
-        if constexpr (scroll_events) {
+        if constexpr (traits == WindowTraits::kScrollEvents) {
           if (incoming_action.type == ActionType::kScrollUp) {
             ImGui::SetScrollY(ImGui::GetScrollY() - 100);
           }
@@ -97,6 +103,7 @@ class SimpleWindow {
   virtual Action DrawImpl(const Action& incoming_action) = 0;
 
   virtual void OpenImpl(const TState& state) {};
+  virtual void OpenImpl() {};
 
   bool open_ = false;
   bool scroll_up_ = false;

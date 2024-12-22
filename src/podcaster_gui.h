@@ -9,9 +9,9 @@
 #include "action.h"
 #include "message.grpc.pb.h"
 #include "message.pb.h"
-#include "panels/about_window.h"
-#include "panels/show_more_window.h"
 #include "panels/license_window.h"
+#include "panels/show_more_window.h"
+#include "panels/about_window.h"
 
 namespace podcaster {
 
@@ -134,6 +134,7 @@ class PodcasterGui {
 
   // subwindows
   ShowMoreWindow show_more_window_;
+  LicenseWindow license_window_;
   AboutWindow about_window_;
 
   // futures

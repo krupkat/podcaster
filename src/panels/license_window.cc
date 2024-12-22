@@ -1,42 +1,55 @@
 #include "panels/license_window.h"
 
-#include <fstream>
-
+#include <imgui.h>
+#include <SDL.h>
+#include <SDL_mixer.h>
 #include <spdlog/spdlog.h>
 
+#include "dependencies.h"
+#include "panels/show_license_window.h"
+#include "version.h"
+
 namespace podcaster {
-
-namespace {
-std::string ReadFile(const std::string& filename) {
-  std::ifstream file(filename);
-  if (!file.is_open()) {
-    spdlog::error("Failed to open file: {}", filename);
-    return "";
-  }
-
-  std::string text;
-  std::string line;
-  while (std::getline(file, line)) {
-    text += line + "\n";
-  }
-
-  return text;
-}
-
-}  // namespace
 
 Action LicenseWindow::DrawImpl(const Action& incoming_action) {
   Action action = {};
 
-  ImGui::Text("%s %s,", dependency_.name.c_str(), dependency_.version.c_str());
-  ImGui::Separator();
-  ImGui::TextWrapped("License: %s", license_text_.c_str());
+  auto version = version::Current();
 
+  ImGui::Text("Podcaster %d.%d.%d", version.major, version.minor,
+              version.patch);
+  ImGui::SameLine();
+  if (ImGui::TextLink("GPL v3")) {
+    OpenSubwindow<ShowLicenseWindow>(Dependency{
+        "Podcaster", version::ToString(), "GPL v3", "licenses/gpl.txt"});
+  }
+  ImGui::Separator();
+
+  SDL_version linked_sdl;
+  SDL_GetVersion(&linked_sdl);
+  const SDL_version* linked_mixer = Mix_Linked_Version();
+
+  for (const auto& dep : kDependencies) {
+    if (dep.name == "sdl") {
+      ImGui::Text("%s [system] %d.%d.%d,", dep.name.c_str(), linked_sdl.major,
+                  linked_sdl.minor, linked_sdl.patch);
+    } else if (dep.name == "sdl_mixer") {
+      ImGui::Text("%s [system] %d.%d.%d,", dep.name.c_str(),
+                  linked_mixer->major, linked_mixer->minor,
+                  linked_mixer->patch);
+    } else {
+      ImGui::Text("%s %s", dep.name.c_str(), dep.version.c_str());
+    }
+    ImGui::SameLine();
+    ImGui::PushID(dep.name.c_str());
+    if (ImGui::TextLink(dep.license.c_str())) {
+      OpenSubwindow<ShowLicenseWindow>(dep);
+    }
+    ImGui::PopID();
+  }
+
+  ImGui::Spacing();
   return action;
 }
 
-void LicenseWindow::OpenImpl(const Dependency& dep) {
-  dependency_ = dep;
-  license_text_ = ReadFile(dep.license_file);
-}
 }  // namespace podcaster

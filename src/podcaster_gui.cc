@@ -229,7 +229,9 @@ Action PodcasterGui::Draw(const Action& incoming_action) {
     action |= {ActionType::kShowAbout};
   }
   ImGui::SameLine();
-  ImGui::Button("Licenses");
+  if (ImGui::Button("Licenses")) {
+    action |= {ActionType::kShowLicenses};
+  }
   ImGui::SameLine();
   ImGui::Text("Service status: %s",
               service_status_ == ServiceStatus::kOnline ? "Online" : "Offline");
@@ -250,6 +252,7 @@ void PodcasterGui::UpdateServiceStatus(ServiceStatus status) {
 void PodcasterGui::Run(const Action& incoming_action) {
   Action action = Draw(incoming_action);
   action |= show_more_window_.Draw(incoming_action);
+  action |= license_window_.Draw(incoming_action);
   action |= about_window_.Draw(incoming_action);
 
   switch (action.type) {
@@ -281,6 +284,9 @@ void PodcasterGui::Run(const Action& incoming_action) {
     }
     case ActionType::kShowAbout:
       about_window_.Open();
+      break;
+    case ActionType::kShowLicenses:
+      license_window_.Open();
       break;
     default:
       break;

@@ -1,18 +1,13 @@
 #pragma once
 
-#include "dependencies.h"
+#include "panels/show_license_window.h"
 #include "panels/simple_window.h"
 
 namespace podcaster {
 
-class LicenseWindow : public SimpleWindow<Dependency, true> {
-  const char* Title() const override { return "License"; }
+class LicenseWindow : public SimpleWindow<NoState, WindowTraits::kDefault,
+                                          std::tuple<ShowLicenseWindow>> {
+  const char* Title() const override { return "Licenses"; }
   Action DrawImpl(const Action& incoming_action) override;
-
-  void OpenImpl(const Dependency& dep) override;
-
-  Dependency dependency_;
-  std::string license_text_;
 };
-
 }  // namespace podcaster
