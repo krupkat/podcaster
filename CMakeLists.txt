@@ -20,7 +20,7 @@ find_package(pugixml REQUIRED)
 
 find_package(imgui REQUIRED)
 if (PODCASTER_BUILD_IMGUI_EXTRA)
-  add_subdirectory(external/imgui) # conan
+  add_subdirectory(podcaster/external/imgui) # conan
 else()
   add_library(imgui ALIAS imgui::imgui) # nix
 endif()
@@ -77,13 +77,13 @@ if (PODCASTER_HANDHELD_BUILD)
   target_compile_definitions(podcaster_client PRIVATE PODCASTER_HANDHELD_BUILD)
 endif()
 
-add_executable(podcaster
+add_executable(podcasterd
   podcaster/podcaster.cc
   podcaster/database.cc
   podcaster/sdl_utils.cc
   podcaster/tidy_utils.cc
 )
-target_link_libraries(podcaster PRIVATE
+target_link_libraries(podcasterd PRIVATE
   podcaster_api
   curlpp::curlpp
   protobuf::libprotobuf
@@ -93,13 +93,13 @@ target_link_libraries(podcaster PRIVATE
   SDL2::SDL2
   SDL2_mixer::SDL2_mixer
 )
-target_include_directories(podcaster PRIVATE .)
+target_include_directories(podcasterd PRIVATE .)
 
 set(CMAKE_INSTALL_BINDIR ".")
 
 install(TARGETS
   podcaster_client
-  podcaster
+  podcasterd
   RUNTIME
 )
 install(DIRECTORY

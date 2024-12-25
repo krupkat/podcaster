@@ -1,6 +1,7 @@
 #pragma once
 
-#include <vector>
+#include <array>
+#include <string>
 
 namespace podcaster {
 
@@ -11,9 +12,9 @@ struct Dependency {
     std::string license_file;
 };
 
-std::vector<Dependency> kDependencies = {
+const std::array kDependencies {
     {%- for dep in deps %}
-    {
+    Dependency {
         "{{ dep.name }}",
         "{{ dep.version }}",
         "{{ dep.license }}",

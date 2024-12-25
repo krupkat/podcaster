@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1-labs
+
 FROM ubuntu:24.04 AS dev
 
 SHELL ["/bin/bash", "-c"]
@@ -6,7 +8,7 @@ SHELL ["/bin/bash", "-c"]
 
 RUN dpkg --add-architecture arm64
 RUN sed -i "s/gpg/gpg\nArchitectures: amd64/g" /etc/apt/sources.list.d/ubuntu.sources
-COPY ubuntu_noble_ports.list /etc/apt/sources.list.d/ports.list
+COPY docker/ubuntu_noble_ports.list /etc/apt/sources.list.d/ports.list
 RUN apt update
 
 # install dev tools
@@ -20,14 +22,14 @@ RUN pip3 install conan Jinja2 --break-system-packages
 # setup conan
 
 ENV CONAN_HOME=/root/.conan
-COPY conan_profile_default /root/.conan/profiles/default
-COPY conan_profile_aarch64 /root/.conan/profiles/aarch64
-COPY settings_user.yml /root/.conan/settings_user.yml
+COPY docker/conan_profile_default /root/.conan/profiles/default
+COPY docker/conan_profile_aarch64 /root/.conan/profiles/aarch64
+COPY docker/settings_user.yml /root/.conan/settings_user.yml
 
 # install build dependencies
 
 RUN --mount=type=tmpfs,target=/build \
-    --mount=source=host_tools.py,target=/build/conanfile.py \
+    --mount=source=docker/host_tools.py,target=/build/conanfile.py \
     --mount=type=cache,target=/root/.conan/p \
     cd /build && \
     conan install . --build missing && \
@@ -41,9 +43,18 @@ ENV PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
 
 WORKDIR /build
 
-RUN --mount=from=src,source=conanfile.py,target=/build/conanfile.py \
-    --mount=from=src,source=templates,target=/build/templates \
-    --mount=type=cache,target=/root/.conan/p \
-    conan install . --build missing -pr:b=default -pr:h=aarch64
+COPY CMakeLists.txt conanfile.py LICENSE changelog.md .
+
+# exclude generated files
+COPY --exclude=podcaster/dependencies.h \
+     --exclude=podcaster/licenses \
+    podcaster podcaster
+
+RUN --mount=type=cache,target=/root/.conan/p \
+    conan install . --build missing -pr:b=default -pr:h=aarch64 && \
+    cmake --preset conan-minsizerel && \
+    cmake --build --preset conan-minsizerel --target install && \
+    upx ./build/MinSizeRel/install/podcasterd && \
+    upx ./build/MinSizeRel/install/podcaster_client
 
 ENTRYPOINT ["/bin/bash"]

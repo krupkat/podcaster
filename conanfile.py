@@ -87,7 +87,7 @@ class PodcasterRecipe(ConanFile):
     def export_licenses(self, deps):
         licenses = {}
 
-        source_dir = Path(self.source_folder)
+        source_dir = Path(self.source_folder) / "podcaster"
         license_dir = source_dir / "licenses"
 
         mkdir(self, license_dir)
@@ -110,6 +110,7 @@ class PodcasterRecipe(ConanFile):
     def generate(self):
         tc = CMakeToolchain(self)
         tc.variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
+        tc.variables["CMAKE_INSTALL_PREFIX"] = "install"
         tc.variables["PODCASTER_BUILD_IMGUI_EXTRA"] = "ON"
         tc.variables["PODCASTER_PREFER_PKGCONFIG"] = "OFF"
         tc.variables["PODCASTER_HANDHELD_BUILD"] = "ON"
@@ -119,7 +120,7 @@ class PodcasterRecipe(ConanFile):
         imgui = self.dependencies["imgui"]
         copy(self, pattern="imgui_impl_sdl*",
              src=Path(imgui.package_folder) / "res" / "bindings",
-             dst=Path(self.source_folder) / "external" / "imgui")
+             dst=Path(self.source_folder) / "podcaster" / "external" / "imgui")
 
         # dependency data and license files
         dependencies = self.bundled_dependencies()
@@ -131,8 +132,9 @@ class PodcasterRecipe(ConanFile):
         ])
 
         dependencies_header_template = load_template(
-            Path(self.source_folder) / "templates" / "dependencies.h")
-        with open(Path(self.source_folder) / "dependencies.h", "w") as f:
+            Path(self.source_folder) / "podcaster" / "templates" / "dependencies.h")
+
+        with open(Path(self.source_folder) / "podcaster" / "dependencies.h", "w") as f:
             f.write(dependencies_header_template.render(deps=dependency_data))
 
     def layout(self):
