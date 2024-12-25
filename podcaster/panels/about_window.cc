@@ -1,9 +1,9 @@
-#include "panels/about_window.h"
+#include "podcaster/panels/about_window.h"
 
 #include <imgui.h>
 
-#include "panels/utils.h"
-#include "version.h"
+#include "podcaster/panels/utils.h"
+#include "podcaster/version.h"
 
 namespace podcaster {
 

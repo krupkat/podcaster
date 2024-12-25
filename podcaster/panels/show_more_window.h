@@ -1,7 +1,7 @@
 #pragma once
 
-#include "action.h"
-#include "panels/simple_window.h"
+#include "podcaster/action.h"
+#include "podcaster/panels/simple_window.h"
 
 namespace podcaster {
 class ShowMoreWindow

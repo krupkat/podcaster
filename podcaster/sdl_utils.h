@@ -7,7 +7,7 @@
 
 #include <SDL.h>
 
-#include "utils.h"
+#include "podcaster/utils.h"
 
 namespace sdl {
 

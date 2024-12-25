@@ -1,6 +1,6 @@
 #pragma once
 
-#include "message.pb.h"
+#include "podcaster/message.pb.h"
 
 namespace podcaster::utils {
 

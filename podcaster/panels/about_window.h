@@ -2,7 +2,7 @@
 
 #include <filesystem>
 
-#include "panels/simple_window.h"
+#include "podcaster/panels/simple_window.h"
 
 namespace podcaster {
 

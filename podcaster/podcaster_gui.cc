@@ -1,12 +1,12 @@
-#include "podcaster_gui.h"
+#include "podcaster/podcaster_gui.h"
 
 #include <string>
 
 #include <imgui.h>
 
-#include "database_utils.h"
-#include "imgui_utils.h"
-#include "version.h"
+#include "podcaster/database_utils.h"
+#include "podcaster/imgui_utils.h"
+#include "podcaster/version.h"
 
 namespace podcaster {
 

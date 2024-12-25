@@ -1,8 +1,8 @@
 .vscode
 build
-src/external/imgui/imgui*
-src/dependencies.h
-src/licenses
+podcaster/external/imgui/imgui*
+podcaster/dependencies.h
+podcaster/licenses
 CMakeUserPresets.json
 .envrc
 .direnv

@@ -18,12 +18,12 @@
 #include <SDL_mixer.h>
 #include <spdlog/spdlog.h>
 
-#include "database.h"
-#include "message.grpc.pb.h"
-#include "message.pb.h"
-#include "sdl_mixer_utils.h"
-#include "tidy_utils.h"
-#include "utils.h"
+#include "podcaster/database.h"
+#include "podcaster/message.grpc.pb.h"
+#include "podcaster/message.pb.h"
+#include "podcaster/sdl_mixer_utils.h"
+#include "podcaster/tidy_utils.h"
+#include "podcaster/utils.h"
 
 constexpr int kMaxEpisodesPerPodcast = 10;
 constexpr int kPreviewLength = 200;

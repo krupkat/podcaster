@@ -10,9 +10,9 @@
 #include <SDL_keycode.h>
 #include <spdlog/spdlog.h>
 
-#include "imgui_utils.h"
-#include "podcaster_gui.h"
-#include "sdl_utils.h"
+#include "podcaster/imgui_utils.h"
+#include "podcaster/podcaster_gui.h"
+#include "podcaster/sdl_utils.h"
 
 const std::string kControllerDatabasePath = "/usr/lib/gamecontrollerdb.txt";
 const std::vector<std::string> kTargetController = {"ANBERNIC-keys",

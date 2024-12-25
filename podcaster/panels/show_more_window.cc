@@ -1,4 +1,4 @@
-#include "panels/show_more_window.h"
+#include "podcaster/panels/show_more_window.h"
 
 namespace podcaster {
 

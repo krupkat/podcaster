@@ -38,7 +38,7 @@ endif()
 
 set(PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto)
 
-add_library(podcaster_api message.proto)
+add_library(podcaster_api podcaster/message.proto)
 target_link_libraries(podcaster_api PUBLIC gRPC::grpc++)
 target_include_directories(podcaster_api PUBLIC ${PROTOC_OUT_DIR})
 
@@ -55,14 +55,14 @@ protobuf_generate(TARGET podcaster_api
 )
 
 add_executable(podcaster_client
-  main.cc
-  sdl_utils.cc
-  imgui_utils.cc
-  podcaster_gui.cc
-  panels/license_window.cc
-  panels/show_license_window.cc
-  panels/show_more_window.cc
-  panels/about_window.cc
+  podcaster/main.cc
+  podcaster/sdl_utils.cc
+  podcaster/imgui_utils.cc
+  podcaster/podcaster_gui.cc
+  podcaster/panels/license_window.cc
+  podcaster/panels/show_license_window.cc
+  podcaster/panels/show_more_window.cc
+  podcaster/panels/about_window.cc
 )
 target_link_libraries(podcaster_client PRIVATE
   podcaster_api
@@ -78,10 +78,10 @@ if (PODCASTER_HANDHELD_BUILD)
 endif()
 
 add_executable(podcaster
-  podcaster.cc
-  database.cc
-  sdl_utils.cc
-  tidy_utils.cc
+  podcaster/podcaster.cc
+  podcaster/database.cc
+  podcaster/sdl_utils.cc
+  podcaster/tidy_utils.cc
 )
 target_link_libraries(podcaster PRIVATE
   podcaster_api
@@ -93,5 +93,31 @@ target_link_libraries(podcaster PRIVATE
   SDL2::SDL2
   SDL2_mixer::SDL2_mixer
 )
+target_include_directories(podcaster PRIVATE .)
 
-install(TARGETS podcaster_client podcaster RUNTIME)
+set(CMAKE_INSTALL_BINDIR ".")
+
+install(TARGETS
+  podcaster_client
+  podcaster
+  RUNTIME
+)
+install(DIRECTORY
+  "podcaster/licenses"
+  DESTINATION "."
+)
+install(FILES
+  "podcaster/assets/OFL.txt"
+  DESTINATION "licenses"
+)
+install(FILES
+  "LICENSE"
+  DESTINATION "licenses"
+  RENAME "gpl.txt"
+)
+install(FILES
+  "changelog.md"
+  "podcaster/assets/Podcaster.sh"
+  "podcaster/assets/NotoSans-Regular.ttf"
+  DESTINATION "."
+)

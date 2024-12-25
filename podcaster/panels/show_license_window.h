@@ -1,7 +1,7 @@
 #pragma once
 
-#include "dependencies.h"
-#include "panels/simple_window.h"
+#include "podcaster/dependencies.h"
+#include "podcaster/panels/simple_window.h"
 
 namespace podcaster {
 

@@ -1,4 +1,4 @@
-#include "imgui_utils.h"
+#include "podcaster/imgui_utils.h"
 
 #include <filesystem>
 
@@ -8,7 +8,7 @@
 #include <SDL.h>
 #include <SDL_video.h>
 
-#include "utils.h"
+#include "podcaster/utils.h"
 
 namespace imgui {
 
@@ -46,8 +46,9 @@ ImGuiContext Init(std::filesystem::path root, SDL_Window* window,
       utils::DestructorCallback([] { ImGui_ImplSDLRenderer2_Shutdown(); });
 
   float scale = 1.8;
-  auto font = imgui_io.Fonts->AddFontFromFileTTF("NotoSans-Regular.ttf",
-                                                 std::roundf(13 * scale));
+  auto font_path = root / "NotoSans-Regular.ttf";
+  auto* font = imgui_io.Fonts->AddFontFromFileTTF(font_path.c_str(),
+                                                  std::roundf(13 * scale));
   ImGui::GetStyle().ScaleAllSizes(scale);
 
   return {std::move(imgui_ini_file), std::move(imgui_quit),

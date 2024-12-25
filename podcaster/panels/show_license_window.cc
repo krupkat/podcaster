@@ -1,8 +1,8 @@
-#include "panels/show_license_window.h"
+#include "podcaster/panels/show_license_window.h"
 
 #include <spdlog/spdlog.h>
 
-#include "panels/utils.h"
+#include "podcaster/panels/utils.h"
 
 namespace podcaster {
 

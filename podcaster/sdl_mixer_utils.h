@@ -6,8 +6,8 @@
 #include <SDL_mixer.h>
 #include <spdlog/spdlog.h>
 
-#include "sdl_utils.h"
-#include "utils.h"
+#include "podcaster/sdl_utils.h"
+#include "podcaster/utils.h"
 
 namespace sdl {
 

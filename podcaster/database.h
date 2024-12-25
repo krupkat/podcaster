@@ -4,8 +4,8 @@
 #include <fstream>
 #include <vector>
 
-#include "database_utils.h"
-#include "message.pb.h"
+#include "podcaster/database_utils.h"
+#include "podcaster/message.pb.h"
 
 namespace podcaster {
 class Database {
