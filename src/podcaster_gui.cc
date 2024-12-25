@@ -6,6 +6,7 @@
 
 #include "database_utils.h"
 #include "imgui_utils.h"
+#include "version.h"
 
 namespace podcaster {
 
@@ -150,7 +151,8 @@ Action PodcasterGui::Draw(const Action& incoming_action) {
 
   ImGui::Begin("MainWindow", nullptr, window_flags);
 
-  ImGui::SeparatorText("Podcaster 0.0.1");
+  auto label = version::AppNameWithVersion();
+  ImGui::SeparatorText(label.c_str());
 
   bool top_row_in_focus = false;
   bool active_refresh = refresh_future_.valid();

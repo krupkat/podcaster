@@ -55,7 +55,7 @@ int main(int /*unused*/, char** /*unused*/) {
   // gui
   podcaster::PodcasterClient podcaster_client(grpc::CreateChannel(
       "localhost:50051", grpc::InsecureChannelCredentials()));
-  podcaster::PodcasterGui podcaster_gui{std::move(podcaster_client)};
+  podcaster::PodcasterGui podcaster_gui{std::move(podcaster_client), exe_path};
 
   // event loop
   SDL_Event event;

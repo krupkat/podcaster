@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <future>
 #include <memory>
 
@@ -9,9 +10,9 @@
 #include "action.h"
 #include "message.grpc.pb.h"
 #include "message.pb.h"
+#include "panels/about_window.h"
 #include "panels/license_window.h"
 #include "panels/show_more_window.h"
-#include "panels/about_window.h"
 
 namespace podcaster {
 
@@ -117,7 +118,8 @@ enum class ServiceStatus { kOnline, kOffline };
 
 class PodcasterGui {
  public:
-  PodcasterGui(PodcasterClient client) : client_(std::move(client)) {
+  PodcasterGui(PodcasterClient client, std::filesystem::path exe_path)
+      : client_(std::move(client)), about_window_(exe_path) {
     state_ = client_.GetState();
   }
 

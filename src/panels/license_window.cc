@@ -23,6 +23,16 @@ Action LicenseWindow::DrawImpl(const Action& incoming_action) {
     OpenSubwindow<ShowLicenseWindow>(Dependency{
         "Podcaster", version::ToString(), "GPL v3", "licenses/gpl.txt"});
   }
+  ImGui::Spacing();
+  ImGui::Separator();
+
+  ImGui::Text("Noto fonts");
+  ImGui::SameLine();
+  if (ImGui::TextLink("OFL")) {
+    OpenSubwindow<ShowLicenseWindow>(
+        Dependency{"Noto fonts", "", "Open Font License", "licenses/OFL.txt"});
+  }
+  ImGui::Spacing();
   ImGui::Separator();
 
   SDL_version linked_sdl;

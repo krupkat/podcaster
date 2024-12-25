@@ -1,6 +1,7 @@
 .vscode
 build
 src/external/imgui/imgui*
+src/dependencies.h
 CMakeUserPresets.json
 .envrc
 .direnv
