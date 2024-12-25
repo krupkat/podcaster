@@ -14,14 +14,12 @@ namespace podcaster {
 Action LicenseWindow::DrawImpl(const Action& incoming_action) {
   Action action = {};
 
-  auto version = version::Current();
-
-  ImGui::Text("Podcaster %d.%d.%d", version.major, version.minor,
-              version.patch);
+  auto label = version::AppNameWithVersion();
+  ImGui::TextUnformatted(label.c_str());
   ImGui::SameLine();
   if (ImGui::TextLink("GPL v3")) {
     OpenSubwindow<ShowLicenseWindow>(Dependency{
-        "Podcaster", version::ToString(), "GPL v3", "licenses/gpl.txt"});
+        "Tiny Podcaster", version::ToString(), "GPL v3", "licenses/gpl.txt"});
   }
   ImGui::Spacing();
   ImGui::Separator();

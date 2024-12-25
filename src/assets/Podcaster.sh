@@ -1,5 +1,5 @@
 #!/bin/sh
-# HELP: Podcaster
+# HELP: Tiny Podcaster
 # ICON: flip
 
 . /opt/muos/script/var/func.sh

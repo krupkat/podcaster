@@ -14,10 +14,12 @@ Action AboutWindow::DrawImpl(const Action& incoming_action) {
   ImGui::SeparatorText(label.c_str());
 
   ImGui::TextWrapped(
-      "Podcaster is a podcast client for embedded Linux devices.");
-  ImGui::TextUnformatted(
-      " - repository: https://github.com/krupkat/podcaster");
+      "Tiny Podcaster is a podcast client for embedded Linux devices.");
+
+  ImGui::Text(" - config file: %s", "");
+  ImGui::Text(" - data storage: %s", "");
   ImGui::Text(" - debug logs: %s", exe_path_.c_str());
+  ImGui::TextUnformatted(" - repository: https://github.com/krupkat/podcaster");
 
   ImGui::SeparatorText("Changelog");
   ImGui::TextWrapped("%s", changelog_.c_str());

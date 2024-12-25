@@ -11,7 +11,7 @@ struct Version {
   int patch;
 };
 
-constexpr Version Current() { return {0, 0, 1}; }
+constexpr Version Current() { return {0, 1, 0}; }
 
 inline std::string ToString() {
   const Version version = Current();
@@ -20,7 +20,7 @@ inline std::string ToString() {
 
 inline std::string AppNameWithVersion() {
   const Version version = Current();
-  return std::format("Podcaster {}.{}.{}", version.major, version.minor,
+  return std::format("Tiny Podcaster {}.{}.{}", version.major, version.minor,
                      version.patch);
 }
 

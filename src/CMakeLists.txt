@@ -38,23 +38,23 @@ endif()
 
 set(PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto)
 
-add_library(schema message.proto)
-target_link_libraries(schema PUBLIC gRPC::grpc++)
-target_include_directories(schema PUBLIC ${PROTOC_OUT_DIR})
+add_library(podcaster_api message.proto)
+target_link_libraries(podcaster_api PUBLIC gRPC::grpc++)
+target_include_directories(podcaster_api PUBLIC ${PROTOC_OUT_DIR})
 
-protobuf_generate(TARGET schema
+protobuf_generate(TARGET podcaster_api
   PROTOC_OUT_DIR ${PROTOC_OUT_DIR}
   LANGUAGE cpp
 )
 
-protobuf_generate(TARGET schema
+protobuf_generate(TARGET podcaster_api
   PROTOC_OUT_DIR ${PROTOC_OUT_DIR}
   LANGUAGE grpc
   PLUGIN protoc-gen-grpc=$<TARGET_FILE:gRPC::grpc_cpp_plugin>
   GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
 )
 
-add_executable(hello_muos
+add_executable(podcaster_client
   main.cc
   sdl_utils.cc
   imgui_utils.cc
@@ -64,17 +64,17 @@ add_executable(hello_muos
   panels/show_more_window.cc
   panels/about_window.cc
 )
-target_link_libraries(hello_muos PRIVATE
-  schema
+target_link_libraries(podcaster_client PRIVATE
+  podcaster_api
   imgui
   SDL2::SDL2
   SDL2_mixer::SDL2_mixer # TODO: remove
   spdlog::spdlog
 )
-target_include_directories(hello_muos PRIVATE .)
+target_include_directories(podcaster_client PRIVATE .)
 
 if (PODCASTER_HANDHELD_BUILD)
-  target_compile_definitions(hello_muos PRIVATE PODCASTER_HANDHELD_BUILD)
+  target_compile_definitions(podcaster_client PRIVATE PODCASTER_HANDHELD_BUILD)
 endif()
 
 add_executable(podcaster
@@ -84,7 +84,7 @@ add_executable(podcaster
   tidy_utils.cc
 )
 target_link_libraries(podcaster PRIVATE
-  schema
+  podcaster_api
   curlpp::curlpp
   protobuf::libprotobuf
   spdlog::spdlog
@@ -94,4 +94,4 @@ target_link_libraries(podcaster PRIVATE
   SDL2_mixer::SDL2_mixer
 )
 
-install(TARGETS hello_muos podcaster RUNTIME)
+install(TARGETS podcaster_client podcaster RUNTIME)
