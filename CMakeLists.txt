@@ -73,10 +73,6 @@ target_link_libraries(podcaster_client PRIVATE
 )
 target_include_directories(podcaster_client PRIVATE .)
 
-if (PODCASTER_HANDHELD_BUILD)
-  target_compile_definitions(podcaster_client PRIVATE PODCASTER_HANDHELD_BUILD)
-endif()
-
 add_executable(podcasterd
   podcaster/podcaster.cc
   podcaster/database.cc
@@ -94,6 +90,11 @@ target_link_libraries(podcasterd PRIVATE
   SDL2_mixer::SDL2_mixer
 )
 target_include_directories(podcasterd PRIVATE .)
+
+if (PODCASTER_HANDHELD_BUILD)
+  target_compile_definitions(podcaster_client PRIVATE PODCASTER_HANDHELD_BUILD)
+  target_compile_definitions(podcasterd PRIVATE PODCASTER_HANDHELD_BUILD)
+endif()
 
 set(CMAKE_INSTALL_BINDIR ".")
 
