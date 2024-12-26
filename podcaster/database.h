@@ -14,6 +14,8 @@ class Database {
     std::filesystem::path file_path = data_dir_ / "db.bin";
     std::ifstream file(file_path, std::ios::binary);
     if (!file.is_open()) {
+      db_.set_db_path(data_dir_);
+      db_.set_config_path(data_dir_ / "config.textproto");
       return;
     }
     db_.ParseFromIstream(&file);

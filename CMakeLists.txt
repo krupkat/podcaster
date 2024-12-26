@@ -63,6 +63,7 @@ add_executable(podcaster_client
   podcaster/panels/show_license_window.cc
   podcaster/panels/show_more_window.cc
   podcaster/panels/about_window.cc
+  podcaster/panels/config_window.cc
 )
 target_link_libraries(podcaster_client PRIVATE
   podcaster_api
@@ -96,7 +97,7 @@ if (PODCASTER_HANDHELD_BUILD)
   target_compile_definitions(podcasterd PRIVATE PODCASTER_HANDHELD_BUILD)
 endif()
 
-set(CMAKE_INSTALL_BINDIR ".")
+set(CMAKE_INSTALL_BINDIR ".podcaster")
 
 install(TARGETS
   podcaster_client
@@ -105,20 +106,23 @@ install(TARGETS
 )
 install(DIRECTORY
   "podcaster/licenses"
-  DESTINATION "."
+  DESTINATION ".podcaster"
 )
 install(FILES
   "podcaster/assets/OFL.txt"
-  DESTINATION "licenses"
+  DESTINATION ".podcaster/licenses"
 )
 install(FILES
   "LICENSE"
-  DESTINATION "licenses"
+  DESTINATION ".podcaster/licenses"
   RENAME "gpl.txt"
 )
 install(FILES
   "changelog.md"
-  "podcaster/assets/Podcaster.sh"
   "podcaster/assets/NotoSans-Regular.ttf"
+  DESTINATION ".podcaster"
+)
+install(FILES
+  "podcaster/assets/Podcaster.sh"
   DESTINATION "."
 )

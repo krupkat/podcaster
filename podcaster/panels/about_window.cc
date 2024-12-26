@@ -14,12 +14,12 @@ Action AboutWindow::DrawImpl(const Action& incoming_action) {
   ImGui::SeparatorText(label.c_str());
 
   ImGui::TextWrapped(
-      "Tiny Podcaster is a podcast client for embedded Linux devices.");
-
-  ImGui::Text(" - config file: %s", "");
-  ImGui::Text(" - data storage: %s", "");
-  ImGui::Text(" - debug logs: %s", exe_path_.c_str());
-  ImGui::TextUnformatted(" - repository: https://github.com/krupkat/podcaster");
+      "Tiny Podcaster is a podcast client for embedded Linux devices.\n - "
+      "config file: %s\n - data storage: %s\n - debug logs: %s\n - repository: "
+      "https://github.com/krupkat/podcaster",
+      config_path_.empty() ? "[service disconnected]" : config_path_.c_str(),
+      db_path_.empty() ? "[service disconnected]" : db_path_.c_str(),
+      exe_path_.c_str());
 
   ImGui::SeparatorText("Changelog");
   ImGui::TextWrapped("%s", changelog_.c_str());
@@ -28,6 +28,10 @@ Action AboutWindow::DrawImpl(const Action& incoming_action) {
   return action;
 }
 
-void AboutWindow::OpenImpl() { changelog_ = ReadFile("changelog.md"); };
+void AboutWindow::OpenImpl(const PathsForAboutWindow& paths) {
+  changelog_ = ReadFile("changelog.md");
+  db_path_ = paths.db_path;
+  config_path_ = paths.config_path;
+};
 
 }  // namespace podcaster

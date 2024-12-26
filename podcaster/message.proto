@@ -45,7 +45,9 @@ message Podcast {
 message Empty {}
 
 message DatabaseState {
-  repeated Podcast podcasts = 1;
+  string db_path = 1;
+  string config_path = 2;
+  repeated Podcast podcasts = 3;
 };
 
 message EpisodeUri {
@@ -64,20 +66,26 @@ message EpisodeUpdate {
   }
 }
 
-service Podcaster {
-  rpc State (Empty) returns (DatabaseState) {}
-  rpc Refresh (Empty) returns (DatabaseState) {}
-  rpc EpisodeUpdates (Empty) returns (stream EpisodeUpdate) {}
-  rpc Download (EpisodeUri) returns (Empty) {}
-  rpc CancelDownload (EpisodeUri) returns (Empty) {}
-  rpc Play (EpisodeUri) returns (Empty) {}
-  rpc Pause (EpisodeUri) returns (Empty) {}
-  rpc Resume (EpisodeUri) returns (Empty) {}
-  rpc Stop (EpisodeUri) returns (Empty) {}
-  rpc Delete (EpisodeUri) returns (Empty) {} 
-  rpc ShutdownIfNotPlaying (Empty) returns (Empty) {}
-}
-
 message Config {
   repeated string feed = 1;
 };
+
+message ConfigDetails {
+  string config_path = 1;
+  Config config = 2;
+}
+
+service Podcaster {
+  rpc State(Empty) returns (DatabaseState) {}
+  rpc Refresh(Empty) returns (DatabaseState) {}
+  rpc EpisodeUpdates(Empty) returns (stream EpisodeUpdate) {}
+  rpc Download(EpisodeUri) returns (Empty) {}
+  rpc CancelDownload(EpisodeUri) returns (Empty) {}
+  rpc Play(EpisodeUri) returns (Empty) {}
+  rpc Pause(EpisodeUri) returns (Empty) {}
+  rpc Resume(EpisodeUri) returns (Empty) {}
+  rpc Stop(EpisodeUri) returns (Empty) {}
+  rpc Delete(EpisodeUri) returns (Empty) {}
+  rpc ShutdownIfNotPlaying(Empty) returns (Empty) {}
+  rpc GetConfigDetails(Empty) returns (ConfigDetails) {}
+}

@@ -2,18 +2,9 @@
 }:
 
 let
-  imgui_docking = (pkgs.imgui.overrideAttrs (oldAttrs: rec {
-      version = "1.91.5-docking";
-
-      src = pkgs.fetchFromGitHub {
-        owner = "ocornut";
-        repo = "imgui";
-        rev = "v${version}";
-        hash = "sha256-6VOs7a31bEfAG75SQAY2X90h/f/HvqZmN615WXYkUOA=";
-      };
-    })).override {
-      IMGUI_BUILD_SDL2_BINDING = true;
-    };
+  imgui_docking = pkgs.imgui.override {
+    IMGUI_BUILD_SDL2_BINDING = true;
+  };
 in
 
 pkgs.mkShell {

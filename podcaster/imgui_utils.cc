@@ -26,7 +26,6 @@ ImGuiContext Init(std::filesystem::path root, SDL_Window* window,
   auto imgui_ini_file =
       std::make_unique<std::filesystem::path>(root / imgui_io.IniFilename);
   imgui_io.IniFilename = imgui_ini_file->c_str();
-  imgui_io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   imgui_io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
   imgui_io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   imgui_io.ConfigNavCursorVisibleAlways = true;

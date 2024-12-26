@@ -17,6 +17,7 @@ enum class ActionType {
   kShowMore,
   kShowAbout,
   kShowLicenses,
+  kShowConfig,
   kFlipPanes,
   kScrollUp,
   kScrollDown,

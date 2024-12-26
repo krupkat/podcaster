@@ -137,7 +137,7 @@ ParsedDescription ParseDescription(const std::string& input) {
   return {walker.ResultShort(), walker.ResultLong()};
 }
 
-podcaster::Podcast DonwloadAndParseFeed(
+std::optional<podcaster::Podcast> DonwloadAndParseFeed(
     const std::string& feed_uri, const std::filesystem::path& cache_dir) {
   std::stringstream feed;
 
@@ -152,7 +152,7 @@ podcaster::Podcast DonwloadAndParseFeed(
     my_request.perform();
   } catch (const std::exception& e) {
     spdlog::error("Failed to download feed: {}", e.what());
-    return podcaster::Podcast();
+    return {};
   }
 
   pugi::xml_document doc;
@@ -160,7 +160,7 @@ podcaster::Podcast DonwloadAndParseFeed(
 
   if (!result) {
     spdlog::error("Failed to parse feed: {}", result.description());
-    return podcaster::Podcast();
+    return {};
   }
 
   auto title = doc.select_node("/rss/channel/title").node();
@@ -204,6 +204,22 @@ struct ActiveDownload {
   std::future<void> future;
 };
 
+podcaster::Config LoadConfig(const std::filesystem::path& data_dir) {
+  auto config_path = data_dir / "config.textproto";
+
+  podcaster::Config config;
+
+  if (std::filesystem::exists(config_path)) {
+    std::ifstream config_file(config_path);
+    if (config_file.is_open()) {
+      google::protobuf::io::IstreamInputStream input_stream(&config_file);
+      google::protobuf::TextFormat::Parse(&input_stream, &config);
+    }
+  }
+
+  return config;
+}
+
 class PodcasterImpl final : public podcaster::Podcaster::Service {
  public:
   explicit PodcasterImpl(std::filesystem::path data_dir)
@@ -236,26 +252,16 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   grpc::Status Refresh(grpc::ServerContext* context,
                        const podcaster::Empty* request,
                        podcaster::DatabaseState* response) override {
-    auto config_path = data_dir_ / "config.textproto";
-
-    podcaster::Config config;
-
-    if (std::filesystem::exists(config_path)) {
-      std::ifstream config_file(config_path);
-      if (config_file.is_open()) {
-        google::protobuf::io::IstreamInputStream input_stream(&config_file);
-        google::protobuf::TextFormat::Parse(&input_stream, &config);
-      }
-    }
+    auto config = LoadConfig(data_dir_);
 
     std::vector<podcaster::EpisodeUri> all_new_episodes;
 
-    int idx = 1;
     for (const auto& feed : config.feed()) {
-      auto podcast = DonwloadAndParseFeed(feed, data_dir_);
-      auto new_episodes = db_->SavePodcast(podcast);
-      std::move(new_episodes.begin(), new_episodes.end(),
-                std::back_inserter(all_new_episodes));
+      if (auto podcast = DonwloadAndParseFeed(feed, data_dir_)) {
+        auto new_episodes = db_->SavePodcast(podcast.value());
+        std::move(new_episodes.begin(), new_episodes.end(),
+                  std::back_inserter(all_new_episodes));
+      }
     }
 
     db_->SaveState();
@@ -577,6 +583,15 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
       // cleanup in case of unclean shutdown
       QueueDownloadStatus(*request, podcaster::DownloadStatus::NOT_DOWNLOADED);
     }
+    return grpc::Status::OK;
+  }
+
+  grpc::Status GetConfigDetails(grpc::ServerContext* context,
+                                const podcaster::Empty* request,
+                                podcaster::ConfigDetails* response) override {
+    auto config = LoadConfig(data_dir_);
+    response->set_config_path(data_dir_ / "config.textproto");
+    response->mutable_config()->CopyFrom(config);
     return grpc::Status::OK;
   }
 

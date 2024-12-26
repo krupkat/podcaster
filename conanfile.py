@@ -59,7 +59,7 @@ class PodcasterRecipe(ConanFile):
     }
 
     def requirements(self):
-        self.requires("imgui/1.91.5-docking")
+        self.requires("imgui/1.91.5")
         self.requires("sdl/2.28.5")
         self.requires("sdl_mixer/2.8.0")
         self.requires("spdlog/1.15.0")
@@ -110,7 +110,6 @@ class PodcasterRecipe(ConanFile):
     def generate(self):
         tc = CMakeToolchain(self)
         tc.variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
-        tc.variables["CMAKE_INSTALL_PREFIX"] = "install"
         tc.variables["PODCASTER_BUILD_IMGUI_EXTRA"] = "ON"
         tc.variables["PODCASTER_PREFER_PKGCONFIG"] = "OFF"
         tc.variables["PODCASTER_HANDHELD_BUILD"] = "ON"

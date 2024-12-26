@@ -52,9 +52,9 @@ COPY --exclude=podcaster/dependencies.h \
 
 RUN --mount=type=cache,target=/root/.conan/p \
     conan install . --build missing -pr:b=default -pr:h=aarch64 && \
-    cmake --preset conan-minsizerel && \
-    cmake --build --preset conan-minsizerel --target install && \
-    upx ./build/MinSizeRel/install/podcasterd && \
-    upx ./build/MinSizeRel/install/podcaster_client
+    cmake --preset conan-minsizerel -DCMAKE_INSTALL_PREFIX=/install && \
+    cmake --build --preset conan-minsizerel --target install/strip && \
+    upx /install/.podcaster/podcasterd && \
+    upx /install/.podcaster/podcaster_client
 
 ENTRYPOINT ["/bin/bash"]

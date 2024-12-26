@@ -135,7 +135,7 @@ Action DrawEpisode(const Podcast& podcast, const Episode& episode,
 void DrawRefreshAnimation() {
   static int frame_counter = 0;
   static const char* dots[] = {"", ".", "..", "..."};
-  ImGui::Text("In progress%s", dots[(frame_counter++ / 16) % 4]);
+  ImGui::Text("Refresh in progress%s", dots[(frame_counter++ / 16) % 4]);
 }
 
 Action PodcasterGui::Draw(const Action& incoming_action) {
@@ -144,7 +144,6 @@ Action PodcasterGui::Draw(const Action& incoming_action) {
   const ImGuiViewport* viewport = ImGui::GetMainViewport();
   ImGui::SetNextWindowPos(viewport->WorkPos);
   ImGui::SetNextWindowSize(viewport->WorkSize);
-  ImGui::SetNextWindowViewport(viewport->ID);
   const ImGuiWindowFlags window_flags =
       ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
       ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
@@ -162,6 +161,10 @@ Action PodcasterGui::Draw(const Action& incoming_action) {
       action |= {ActionType::kRefresh};
     }
   });
+  ImGui::SameLine();
+  if (ImGui::Button("Config")) {
+    action |= {ActionType::kShowConfig};
+  }
   if (active_refresh) {
     ImGui::SameLine();
     DrawRefreshAnimation();
@@ -256,6 +259,7 @@ void PodcasterGui::Run(const Action& incoming_action) {
   action |= show_more_window_.Draw(incoming_action);
   action |= license_window_.Draw(incoming_action);
   action |= about_window_.Draw(incoming_action);
+  action |= config_window_.Draw(incoming_action);
 
   switch (action.type) {
     case ActionType::kRefresh:
@@ -285,11 +289,17 @@ void PodcasterGui::Run(const Action& incoming_action) {
       break;
     }
     case ActionType::kShowAbout:
-      about_window_.Open();
+      about_window_.Open(
+          {.db_path = state_.db_path(), .config_path = state_.config_path()});
       break;
     case ActionType::kShowLicenses:
       license_window_.Open();
       break;
+    case ActionType::kShowConfig: {
+      auto config = client_.GetConfigDetails();
+      config_window_.Open(config);
+      break;
+    }
     default:
       break;
   }

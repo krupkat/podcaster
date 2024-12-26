@@ -11,6 +11,7 @@
 #include "podcaster/message.grpc.pb.h"
 #include "podcaster/message.pb.h"
 #include "podcaster/panels/about_window.h"
+#include "podcaster/panels/config_window.h"
 #include "podcaster/panels/license_window.h"
 #include "podcaster/panels/show_more_window.h"
 
@@ -52,6 +53,19 @@ class PodcasterClient {
     Empty request;
     DatabaseState response;
     stub_->Refresh(&context, request, &response);
+    return response;
+  }
+
+  std::optional<ConfigDetails> GetConfigDetails() {
+    grpc::ClientContext context;
+    Empty request;
+    ConfigDetails response;
+    grpc::Status status = stub_->GetConfigDetails(&context, request, &response);
+    if (!status.ok()) {
+      spdlog::error("Fetching service config failed: {}",
+                    status.error_message());
+      return {};
+    }
     return response;
   }
 
@@ -140,6 +154,7 @@ class PodcasterGui {
   ShowMoreWindow show_more_window_;
   LicenseWindow license_window_;
   AboutWindow about_window_;
+  ConfigWindow config_window_;
 
   // futures
   std::future<DatabaseState> refresh_future_;
