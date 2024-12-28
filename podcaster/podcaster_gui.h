@@ -56,11 +56,11 @@ class PodcasterClient {
     return response;
   }
 
-  std::optional<ConfigDetails> GetConfigDetails() {
+  std::optional<ConfigInfo> GetConfigInfo() {
     grpc::ClientContext context;
     Empty request;
-    ConfigDetails response;
-    grpc::Status status = stub_->GetConfigDetails(&context, request, &response);
+    ConfigInfo response;
+    grpc::Status status = stub_->GetConfigInfo(&context, request, &response);
     if (!status.ok()) {
       spdlog::error("Fetching service config failed: {}",
                     status.error_message());
@@ -137,6 +137,10 @@ class PodcasterGui {
         license_window_(exe_path),
         about_window_(exe_path) {
     state_ = client_.GetState();
+    auto config_info = client_.GetConfigInfo();
+    if (not config_info or (config_info->config().feed_size() == 0)) {
+      config_window_.Open(config_info);
+    }
   }
 
   void Run(const Action& incoming_action);

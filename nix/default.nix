@@ -2,7 +2,7 @@
 }:
 
 let
-  imgui_docking = pkgs.imgui.override {
+  imgui_sdl = pkgs.imgui.override {
     IMGUI_BUILD_SDL2_BINDING = true;
   };
 in
@@ -19,7 +19,7 @@ pkgs.mkShell {
     protobuf
     curlpp
     curl
-    imgui_docking
+    imgui_sdl
     html-tidy
     pugixml
     clang-tools_18

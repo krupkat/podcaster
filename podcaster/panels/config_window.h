@@ -7,12 +7,12 @@
 
 namespace podcaster {
 
-class ConfigWindow : public SimpleWindow<std::optional<ConfigDetails>,
+class ConfigWindow : public SimpleWindow<std::optional<ConfigInfo>,
                                          WindowTraits::kScrollEvents> {
   const char* Title() const override { return "Config"; }
   Action DrawImpl(const Action& incoming_action) override;
-  void OpenImpl(const std::optional<ConfigDetails>& config) override;
+  void OpenImpl(const std::optional<ConfigInfo>& config) override;
 
-  std::optional<ConfigDetails> config_;
+  std::optional<ConfigInfo> config_;
 };
 }  // namespace podcaster

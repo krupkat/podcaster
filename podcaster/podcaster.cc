@@ -209,12 +209,25 @@ podcaster::Config LoadConfig(const std::filesystem::path& data_dir) {
 
   podcaster::Config config;
 
-  if (std::filesystem::exists(config_path)) {
-    std::ifstream config_file(config_path);
+  if (not std::filesystem::exists(data_dir)) {
+    std::filesystem::create_directories(data_dir);
+  }
+
+  if (not std::filesystem::exists(config_path)) {
+    std::ofstream config_file(config_path);
     if (config_file.is_open()) {
-      google::protobuf::io::IstreamInputStream input_stream(&config_file);
-      google::protobuf::TextFormat::Parse(&input_stream, &config);
+      config_file <<
+          R"(# Specify the feeds you want to subscribe to, one feed per line:
+# feed: "http://www.2600.com/oth-broadband.xml"
+# feed: "https://podcast.darknetdiaries.com/"
+)";
     }
+  }
+
+  std::ifstream config_file(config_path);
+  if (config_file.is_open()) {
+    google::protobuf::io::IstreamInputStream input_stream(&config_file);
+    google::protobuf::TextFormat::Parse(&input_stream, &config);
   }
 
   return config;
@@ -586,9 +599,9 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     return grpc::Status::OK;
   }
 
-  grpc::Status GetConfigDetails(grpc::ServerContext* context,
+  grpc::Status GetConfigInfo(grpc::ServerContext* context,
                                 const podcaster::Empty* request,
-                                podcaster::ConfigDetails* response) override {
+                                podcaster::ConfigInfo* response) override {
     auto config = LoadConfig(data_dir_);
     response->set_config_path(data_dir_ / "config.textproto");
     response->mutable_config()->CopyFrom(config);

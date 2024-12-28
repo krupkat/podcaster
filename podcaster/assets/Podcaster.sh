@@ -7,7 +7,7 @@
 echo app >/tmp/act_go
 
 PODCASTER_DIR="/mnt/mmc/MUOS/application/.podcaster"
-DB_DIR="/mnt/sdcard/MUOS/save/podcaster"
+DB_DIR="/run/muos/storage/save/podcaster"
 
 cd "$PODCASTER_DIR" || exit
 

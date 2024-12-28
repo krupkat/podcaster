@@ -289,15 +289,14 @@ void PodcasterGui::Run(const Action& incoming_action) {
       break;
     }
     case ActionType::kShowAbout:
-      about_window_.Open(
-          {.db_path = state_.db_path(), .config_path = state_.config_path()});
+      about_window_.Open({.db_path = state_.db_path()});
       break;
     case ActionType::kShowLicenses:
       license_window_.Open();
       break;
     case ActionType::kShowConfig: {
-      auto config = client_.GetConfigDetails();
-      config_window_.Open(config);
+      auto config_info = client_.GetConfigInfo();
+      config_window_.Open(config_info);
       break;
     }
     default:

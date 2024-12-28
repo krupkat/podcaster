@@ -8,7 +8,6 @@ namespace podcaster {
 
 struct PathsForAboutWindow {
   std::filesystem::path db_path;
-  std::filesystem::path config_path;
 };
 
 class AboutWindow
