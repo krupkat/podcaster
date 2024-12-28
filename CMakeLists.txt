@@ -37,6 +37,7 @@ else()
 endif()
 
 set(PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto)
+file(MAKE_DIRECTORY ${PROTOC_OUT_DIR})
 
 add_library(podcaster_api podcaster/message.proto)
 target_link_libraries(podcaster_api PUBLIC gRPC::grpc++)

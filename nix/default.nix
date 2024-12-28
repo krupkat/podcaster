@@ -31,4 +31,8 @@ pkgs.mkShell {
     ]))
   ];
 
+  shellHook = ''
+    mkdir -p podcaster/licenses
+    cp podcaster/templates/dependencies_example.h podcaster/dependencies.h
+  '';
 }
