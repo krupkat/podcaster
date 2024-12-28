@@ -160,23 +160,24 @@ Action PodcasterGui::Draw(const Action& incoming_action) {
     if (ImGui::Button("Refresh")) {
       action |= {ActionType::kRefresh};
     }
+    top_row_in_focus |= ImGui::IsItemFocused();
   });
   ImGui::SameLine();
   if (ImGui::Button("Config")) {
     action |= {ActionType::kShowConfig};
   }
+  top_row_in_focus |= ImGui::IsItemFocused();
   if (service_status_ == ServiceStatus::kOnline) {
     ImGui::SameLine();
     if (ImGui::Button("Cleanup")) {
       action |= {ActionType::kShowCleanup};
     }
+    top_row_in_focus |= ImGui::IsItemFocused();
   }
   if (active_refresh) {
     ImGui::SameLine();
     DrawRefreshAnimation();
   }
-
-  top_row_in_focus |= ImGui::IsItemFocused();
 
   // scroll to top if first item is focused
   if (top_row_in_focus) {

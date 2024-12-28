@@ -73,9 +73,6 @@ class SimpleWindow {
                            ImGuiWindowFlags_NoSavedSettings)) {
         action |= DrawImpl(incoming_action);
 
-        if (ImGui::Button("Close")) {
-          Close();
-        }
         if (incoming_action.type == ActionType::kBack) {
           Close();
         }

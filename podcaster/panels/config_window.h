@@ -7,8 +7,7 @@
 
 namespace podcaster {
 
-class ConfigWindow : public SimpleWindow<std::optional<ConfigInfo>,
-                                         WindowTraits::kScrollEvents> {
+class ConfigWindow : public SimpleWindow<std::optional<ConfigInfo>> {
   const char* Title() const override { return "Config"; }
   Action DrawImpl(const Action& incoming_action) override;
   void OpenImpl(const std::optional<ConfigInfo>& config) override;

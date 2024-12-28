@@ -7,3 +7,4 @@ CMakeUserPresets.json
 .envrc
 .direnv
 state
+export
