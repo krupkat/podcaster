@@ -1,0 +1,43 @@
+name: Build and upload release
+
+on: 
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build'
+        required: true
+        type: string
+
+jobs:
+  upload-release-muos:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{inputs.tag}}
+
+    - name: Build
+      id: build
+      run: |
+        ./docker/build_muos_archive.sh
+        release_filename=`ls export/tiny*`
+        echo "release_filename=$release_filename" >> "$GITHUB_OUTPUT"
+
+    - name: Compute checksum
+      env:
+        RELEASE_FILENAME: ${{steps.build.outputs.release_filename}}
+      run: |
+        shasum -a 256 "$RELEASE_FILENAME" > "$RELEASE_FILENAME.sha256"
+        echo "sha256 checksum:"
+        cat "$RELEASE_FILENAME.sha256"
+
+    - name: Upload release files
+      env:
+        RELEASE_FILENAME: ${{steps.build.outputs.release_filename}}
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{inputs.tag}}
+        files: |
+          $RELEASE_FILENAME
+          $RELEASE_FILENAME.sha256
