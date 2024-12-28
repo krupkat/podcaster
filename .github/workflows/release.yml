@@ -37,11 +37,9 @@ jobs:
         cat "$RELEASE_FILENAME.sha256"
 
     - name: Upload release files
-      env:
-        RELEASE_FILENAME: ${{steps.build.outputs.release_filename}}
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{inputs.tag}}
         files: |
-          $RELEASE_FILENAME
-          $RELEASE_FILENAME.sha256
+          ${{steps.build.outputs.release_filename}}
+          ${{steps.build.outputs.release_filename}}.sha256
