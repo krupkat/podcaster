@@ -165,6 +165,10 @@ Action PodcasterGui::Draw(const Action& incoming_action) {
   if (ImGui::Button("Config")) {
     action |= {ActionType::kShowConfig};
   }
+  ImGui::SameLine();
+  if (ImGui::Button("Cleanup")) {
+    action |= {ActionType::kShowCleanup};
+  }
   if (active_refresh) {
     ImGui::SameLine();
     DrawRefreshAnimation();
@@ -260,6 +264,7 @@ void PodcasterGui::Run(const Action& incoming_action) {
   action |= license_window_.Draw(incoming_action);
   action |= about_window_.Draw(incoming_action);
   action |= config_window_.Draw(incoming_action);
+  action |= cleanup_window_.Draw(incoming_action);
 
   switch (action.type) {
     case ActionType::kRefresh:
@@ -297,6 +302,14 @@ void PodcasterGui::Run(const Action& incoming_action) {
     case ActionType::kShowConfig: {
       auto config_info = client_.GetConfigInfo();
       config_window_.Open(config_info);
+      break;
+    }
+    case ActionType::kShowCleanup:
+      cleanup_window_.Open();
+      break;
+    case ActionType::kCleanup: {
+      const auto& extra = std::get<CleanupExtra>(action.extra);
+      client_.Cleanup(extra);
       break;
     }
     default:

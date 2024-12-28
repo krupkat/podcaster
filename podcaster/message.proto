@@ -87,4 +87,6 @@ service Podcaster {
   rpc Delete(EpisodeUri) returns (Empty) {}
   rpc ShutdownIfNotPlaying(Empty) returns (Empty) {}
   rpc GetConfigInfo(Empty) returns (ConfigInfo) {}
+  rpc CleanupDownloads(Empty) returns (Empty) {}
+  rpc CleanupAll(Empty) returns (Empty) {}
 }

@@ -64,6 +64,7 @@ add_executable(podcaster_client
   podcaster/panels/show_more_window.cc
   podcaster/panels/about_window.cc
   podcaster/panels/config_window.cc
+  podcaster/panels/cleanup_window.cc
 )
 target_link_libraries(podcaster_client PRIVATE
   podcaster_api

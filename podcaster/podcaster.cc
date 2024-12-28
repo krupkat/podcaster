@@ -233,6 +233,8 @@ podcaster::Config LoadConfig(const std::filesystem::path& data_dir) {
   return config;
 }
 
+enum class QueueFlags { kTransient, kPersist };
+
 class PodcasterImpl final : public podcaster::Podcaster::Service {
  public:
   explicit PodcasterImpl(std::filesystem::path data_dir)
@@ -316,7 +318,8 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
       if (dltotal == 0) {
         return 0;
       }
-      impl_->QueueDownloadProgress(uri_, dlnow, dltotal);
+      impl_->QueueDownloadProgress(uri_, dlnow, dltotal,
+                                   QueueFlags::kTransient);
       return 0;
     }
 
@@ -351,8 +354,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     void Play(const podcaster::EpisodeUri& uri) {
       if (music_) {
         auto position = Mix_GetMusicPosition(music_->ptr.get());
-        impl_->QueuePlaybackProgress(music_->uri, position * 1000.,
-                                     QueueFlags::kPersist);
+        impl_->QueuePlaybackProgress(music_->uri, position * 1000);
         impl_->QueuePlaybackStatus(music_->uri,
                                    podcaster::PlaybackStatus::NOT_PLAYING);
         Mix_HaltMusic();
@@ -390,8 +392,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
       if (music_ and uri.podcast_uri() == music_->uri.podcast_uri() and
           uri.episode_uri() == music_->uri.episode_uri()) {
         auto position = Mix_GetMusicPosition(music_->ptr.get());
-        impl_->QueuePlaybackProgress(music_->uri, position * 1000.,
-                                     QueueFlags::kPersist);
+        impl_->QueuePlaybackProgress(music_->uri, position * 1000.);
         Mix_PauseMusic();
         impl_->QueuePlaybackStatus(music_->uri,
                                    podcaster::PlaybackStatus::PAUSED);
@@ -420,7 +421,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
         impl_->QueuePlaybackStatus(uri, podcaster::PlaybackStatus::NOT_PLAYING);
       } else if (uri.podcast_uri() == music_->uri.podcast_uri() and
                  uri.episode_uri() == music_->uri.episode_uri()) {
-        impl_->QueuePlaybackProgress(music_->uri, 0, QueueFlags::kPersist);
+        impl_->QueuePlaybackProgress(music_->uri, 0);
         Mix_HaltMusic();
         impl_->QueuePlaybackStatus(music_->uri,
                                    podcaster::PlaybackStatus::NOT_PLAYING);
@@ -487,21 +488,41 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
     return grpc::Status::OK;
   }
 
+  void DeleteImpl(const podcaster::EpisodeUri& uri, QueueFlags flags) {
+    std::filesystem::path download_path =
+        data_dir_ / DownloadFilename(uri.episode_uri());
+    std::filesystem::remove(download_path);
+
+    QueueDownloadProgress(uri, 0, 0, flags);
+    QueueDownloadStatus(uri, podcaster::DownloadStatus::NOT_DOWNLOADED, flags);
+    QueuePlaybackProgress(uri, 0, flags);
+    QueuePlaybackDuration(uri, 0, flags);
+
+    if (flags == QueueFlags::kPersist) {
+      std::lock_guard<std::mutex> lock(db_mutex_);
+      db_->SaveState();
+    }
+  }
+
+  grpc::Status CleanupDownloads(grpc::ServerContext* context,
+                                const podcaster::Empty* request,
+                                podcaster::Empty* response) override {
+    return grpc::Status::OK;
+  }
+
+  grpc::Status CleanupAll(grpc::ServerContext* context,
+                          const podcaster::Empty* request,
+                          podcaster::Empty* response) override {
+    return grpc::Status::OK;
+  }
+
   grpc::Status Delete(grpc::ServerContext* context,
                       const podcaster::EpisodeUri* request,
                       podcaster::Empty* response) override {
     if (auto episode = db_->FindEpisodeMutable(*request); episode) {
       if (episode.value()->download_status() ==
           podcaster::DownloadStatus::DOWNLOAD_SUCCESS) {
-        std::filesystem::path download_path =
-            data_dir_ / DownloadFilename(request->episode_uri());
-        std::filesystem::remove(download_path);
-
-        QueueDownloadProgress(*request, 0, 0);
-        QueueDownloadStatus(*request,
-                            podcaster::DownloadStatus::NOT_DOWNLOADED);
-        QueuePlaybackProgress(*request, 0, QueueFlags::kPersist);
-        QueuePlaybackDuration(*request, 0);
+        DeleteImpl(*request, QueueFlags::kPersist);
       }
     }
     return grpc::Status::OK;
@@ -600,8 +621,8 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   }
 
   grpc::Status GetConfigInfo(grpc::ServerContext* context,
-                                const podcaster::Empty* request,
-                                podcaster::ConfigInfo* response) override {
+                             const podcaster::Empty* request,
+                             podcaster::ConfigInfo* response) override {
     auto config = LoadConfig(data_dir_);
     response->set_config_path(data_dir_ / "config.textproto");
     response->mutable_config()->CopyFrom(config);
@@ -609,7 +630,6 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   }
 
  private:
-  enum class QueueFlags { kTransient, kPersist };
   void QueueUpdate(const podcaster::EpisodeUpdate& update, QueueFlags flags) {
     {
       std::lock_guard<std::mutex> lock(updates_mtx_);
@@ -631,33 +651,37 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   }
 
   void QueueDownloadStatus(const podcaster::EpisodeUri& request,
-                           podcaster::DownloadStatus status) {
+                           podcaster::DownloadStatus status,
+                           QueueFlags flags = QueueFlags::kPersist) {
     podcaster::EpisodeUpdate update;
     update.mutable_uri()->CopyFrom(request);
     update.set_new_download_status(status);
-    QueueUpdate(update, QueueFlags::kPersist);
+    QueueUpdate(update, flags);
   }
 
   void QueueDownloadProgress(const podcaster::EpisodeUri& request,
-                             float progress, float size) {
+                             float progress, float size,
+                             QueueFlags flags = QueueFlags::kPersist) {
     podcaster::EpisodeUpdate update;
     update.mutable_uri()->CopyFrom(request);
     auto* download_progress = update.mutable_new_download_progress();
     download_progress->set_downloaded_bytes(progress);
     download_progress->set_total_bytes(size);
-    QueueUpdate(update, QueueFlags::kTransient);
+    QueueUpdate(update, flags);
   }
 
   void QueuePlaybackStatus(const podcaster::EpisodeUri& request,
-                           podcaster::PlaybackStatus status) {
+                           podcaster::PlaybackStatus status,
+                           QueueFlags flags = QueueFlags::kPersist) {
     podcaster::EpisodeUpdate update;
     update.mutable_uri()->CopyFrom(request);
     update.set_new_playback_status(status);
-    QueueUpdate(update, QueueFlags::kPersist);
+    QueueUpdate(update, flags);
   }
 
   void QueuePlaybackProgress(const podcaster::EpisodeUri& request,
-                             int position_ms, QueueFlags flags) {
+                             int position_ms,
+                             QueueFlags flags = QueueFlags::kPersist) {
     podcaster::EpisodeUpdate update;
     update.mutable_uri()->CopyFrom(request);
     update.set_new_playback_progress(position_ms);
@@ -665,11 +689,12 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   }
 
   void QueuePlaybackDuration(const podcaster::EpisodeUri& request,
-                             int duration_ms) {
+                             int duration_ms,
+                             QueueFlags flags = QueueFlags::kPersist) {
     podcaster::EpisodeUpdate update;
     update.mutable_uri()->CopyFrom(request);
     update.set_new_playback_duration(duration_ms);
-    QueueUpdate(update, QueueFlags::kPersist);
+    QueueUpdate(update, flags);
   }
 
   std::filesystem::path data_dir_;

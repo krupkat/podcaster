@@ -18,10 +18,12 @@ enum class ActionType {
   kShowAbout,
   kShowLicenses,
   kShowConfig,
+  kShowCleanup,
   kFlipPanes,
   kScrollUp,
   kScrollDown,
-  kBack
+  kBack,
+  kCleanup
 };
 
 struct EpisodeExtra {
@@ -35,9 +37,16 @@ struct ShowMoreExtra {
   std::string episode_description_long;
 };
 
+enum class CleanupTarget { kDownloads, kAll };
+
+struct CleanupExtra {
+  CleanupTarget target;
+};
+
 struct Action {
   ActionType type = ActionType::kIdle;
-  std::variant<std::monostate, EpisodeExtra, ShowMoreExtra> extra;
+  std::variant<std::monostate, EpisodeExtra, ShowMoreExtra, CleanupExtra>
+      extra;
 };
 
 inline Action& operator|=(Action& lhs, const Action& rhs) {

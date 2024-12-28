@@ -74,10 +74,10 @@ class SimpleWindow {
         DrawImpl(incoming_action);
 
         if (ImGui::Button("Close")) {
-          open_ = false;
+          Close();
         }
         if (incoming_action.type == ActionType::kBack) {
-          open_ = false;
+          Close();
         }
         if constexpr (traits == WindowTraits::kScrollEvents) {
           if (incoming_action.type == ActionType::kScrollUp) {
@@ -97,6 +97,9 @@ class SimpleWindow {
         },
         subwindows_);
   }
+
+ protected:
+  void Close() { open_ = false; }
 
  private:
   virtual const char* Title() const = 0;

@@ -11,6 +11,7 @@
 #include "podcaster/message.grpc.pb.h"
 #include "podcaster/message.pb.h"
 #include "podcaster/panels/about_window.h"
+#include "podcaster/panels/cleanup_window.h"
 #include "podcaster/panels/config_window.h"
 #include "podcaster/panels/license_window.h"
 #include "podcaster/panels/show_more_window.h"
@@ -124,6 +125,20 @@ class PodcasterClient {
     }
   }
 
+  void Cleanup(const CleanupExtra& extra) {
+    grpc::ClientContext context;
+    Empty request;
+    Empty response;
+    switch (extra.target) {
+      case CleanupTarget::kDownloads:
+        stub_->CleanupDownloads(&context, request, &response);
+        break;
+      case CleanupTarget::kAll:
+        stub_->CleanupAll(&context, request, &response);
+        break;
+    }
+  }
+
  private:
   std::unique_ptr<podcaster::Podcaster::Stub> stub_;
 };
@@ -159,6 +174,7 @@ class PodcasterGui {
   LicenseWindow license_window_;
   AboutWindow about_window_;
   ConfigWindow config_window_;
+  CleanupWindow cleanup_window_;
 
   // futures
   std::future<DatabaseState> refresh_future_;
