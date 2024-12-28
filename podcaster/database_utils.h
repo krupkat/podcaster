@@ -4,6 +4,30 @@
 
 namespace podcaster::utils {
 
+inline std::optional<Episode> FindEpisode(const EpisodeUri& uri,
+                                          DatabaseState* state) {
+  auto podcast =
+      std::find_if(state->podcasts().begin(), state->podcasts().end(),
+                   [&uri](const Podcast& p) {
+                     return p.podcast_uri() == uri.podcast_uri();
+                   });
+  if (podcast == state->podcasts().end()) {
+    return {};
+  }
+
+  auto episode =
+      std::find_if(podcast->episodes().begin(), podcast->episodes().end(),
+                   [&uri](const Episode& e) {
+                     return e.episode_uri() == uri.episode_uri();
+                   });
+
+  if (episode == podcast->episodes().end()) {
+    return {};
+  }
+
+  return *episode;
+}
+
 inline auto FindEpisodeMutable(const EpisodeUri& uri, DatabaseState* state)
     -> std::optional<google::protobuf::internal::RepeatedPtrIterator<Episode>> {
   auto podcast =

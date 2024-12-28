@@ -273,13 +273,17 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
 
     for (const auto& feed : config.feed()) {
       if (auto podcast = DonwloadAndParseFeed(feed, data_dir_)) {
+        std::lock_guard<std::mutex> lock(db_mutex_);
         auto new_episodes = db_->SavePodcast(podcast.value());
         std::move(new_episodes.begin(), new_episodes.end(),
                   std::back_inserter(all_new_episodes));
       }
     }
 
-    db_->SaveState();
+    {
+      std::lock_guard<std::mutex> lock(db_mutex_);
+      db_->SaveState();
+    }
     auto state = db_->GetState();
     response->CopyFrom(state);
 
@@ -350,6 +354,10 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
                                    podcaster::PlaybackStatus::NOT_PLAYING);
       }
     }
+    PlaybackController(PlaybackController&&) = default;
+    PlaybackController& operator=(PlaybackController&&) = default;
+    PlaybackController(const PlaybackController&) = delete;
+    PlaybackController& operator=(const PlaybackController&) = delete;
 
     void Play(const podcaster::EpisodeUri& uri) {
       if (music_) {
@@ -361,7 +369,7 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
         music_.reset();
       }
 
-      if (auto episode = impl_->db_->FindEpisodeMutable(uri); episode) {
+      if (auto episode = impl_->db_->FindEpisode(uri); episode) {
         std::filesystem::path download_path =
             impl_->data_dir_ / DownloadFilename(uri.episode_uri());
 
@@ -372,14 +380,13 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
 
           impl_->QueuePlaybackStatus(uri, podcaster::PlaybackStatus::PLAYING);
 
-          if (int elapsed_ms =
-                  episode.value()->playback_progress().elapsed_ms();
+          if (int elapsed_ms = episode.value().playback_progress().elapsed_ms();
               elapsed_ms > 0) {
             int res = Mix_SetMusicPosition(
-                episode.value()->playback_progress().elapsed_ms() / 1000.);
+                episode.value().playback_progress().elapsed_ms() / 1000.);
           }
 
-          if (int duration_ms = episode.value()->playback_progress().total_ms();
+          if (int duration_ms = episode.value().playback_progress().total_ms();
               duration_ms == 0) {
             auto duration = Mix_MusicDuration(music_->ptr.get());
             impl_->QueuePlaybackDuration(uri, duration * 1000.);
@@ -507,20 +514,79 @@ class PodcasterImpl final : public podcaster::Podcaster::Service {
   grpc::Status CleanupDownloads(grpc::ServerContext* context,
                                 const podcaster::Empty* request,
                                 podcaster::Empty* response) override {
+    spdlog::info("CleanupDownloads");
+    auto state = db_->GetState();
+    podcaster::EpisodeUri uri;
+    for (const auto& podcast : state.podcasts()) {
+      uri.set_podcast_uri(podcast.podcast_uri());
+      for (const auto& episode : podcast.episodes()) {
+        uri.set_episode_uri(episode.episode_uri());
+
+        if ((episode.download_status() ==
+                 podcaster::DownloadStatus::DOWNLOAD_SUCCESS or
+             episode.download_status() ==
+                 podcaster::DownloadStatus::DOWNLOAD_ERROR) and
+            episode.playback_status() != podcaster::PlaybackStatus::PLAYING) {
+          // write to disk later in bulk with SaveState
+          DeleteImpl(uri, QueueFlags::kTransient);
+        }
+      }
+    }
+
+    {
+      std::lock_guard<std::mutex> lock(db_mutex_);
+      db_->SaveState();
+    }
+
+    // iterate mp3 files in data_dir_
+    for (const auto& entry : std::filesystem::directory_iterator(data_dir_)) {
+      if (entry.path().extension() == ".mp3") {
+        spdlog::warn("Found orphaned file: {}, deleting",
+                     entry.path().string());
+        std::filesystem::remove(entry.path());
+      }
+    }
+
     return grpc::Status::OK;
   }
 
   grpc::Status CleanupAll(grpc::ServerContext* context,
                           const podcaster::Empty* request,
                           podcaster::Empty* response) override {
+    // stop playback
+    playback_controller_ = PlaybackController{this};
+
+    // stop downloads
+    {
+      std::lock_guard<std::mutex> lock(download_mtx_);
+      for (auto& download : downloads_in_progress_) {
+        download.cancel->store(true);
+        // swallow exceptions
+        download.future.wait();
+      }
+    }
+
+    // recreate database
+    {
+      std::lock_guard<std::mutex> lock(db_mutex_);
+      db_.reset();
+
+      for (const auto& entry : std::filesystem::directory_iterator(data_dir_)) {
+        if (entry.path().filename() != "config.textproto") {
+          std::filesystem::remove_all(entry.path());
+        }
+      }
+
+      db_ = std::make_unique<podcaster::Database>(data_dir_);
+    }
     return grpc::Status::OK;
   }
 
   grpc::Status Delete(grpc::ServerContext* context,
                       const podcaster::EpisodeUri* request,
                       podcaster::Empty* response) override {
-    if (auto episode = db_->FindEpisodeMutable(*request); episode) {
-      if (episode.value()->download_status() ==
+    if (auto episode = db_->FindEpisode(*request); episode) {
+      if (episode.value().download_status() ==
           podcaster::DownloadStatus::DOWNLOAD_SUCCESS) {
         DeleteImpl(*request, QueueFlags::kPersist);
       }

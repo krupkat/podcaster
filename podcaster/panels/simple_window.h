@@ -71,7 +71,7 @@ class SimpleWindow {
                        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
                            ImGuiWindowFlags_NoMove |
                            ImGuiWindowFlags_NoSavedSettings)) {
-        DrawImpl(incoming_action);
+        action |= DrawImpl(incoming_action);
 
         if (ImGui::Button("Close")) {
           Close();

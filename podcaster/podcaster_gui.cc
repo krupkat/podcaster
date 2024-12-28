@@ -165,9 +165,11 @@ Action PodcasterGui::Draw(const Action& incoming_action) {
   if (ImGui::Button("Config")) {
     action |= {ActionType::kShowConfig};
   }
-  ImGui::SameLine();
-  if (ImGui::Button("Cleanup")) {
-    action |= {ActionType::kShowCleanup};
+  if (service_status_ == ServiceStatus::kOnline) {
+    ImGui::SameLine();
+    if (ImGui::Button("Cleanup")) {
+      action |= {ActionType::kShowCleanup};
+    }
   }
   if (active_refresh) {
     ImGui::SameLine();
@@ -310,6 +312,9 @@ void PodcasterGui::Run(const Action& incoming_action) {
     case ActionType::kCleanup: {
       const auto& extra = std::get<CleanupExtra>(action.extra);
       client_.Cleanup(extra);
+      if (extra.target == CleanupTarget::kAll) {
+        state_ = client_.GetState();
+      }
       break;
     }
     default:

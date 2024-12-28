@@ -35,6 +35,10 @@ class Database {
     return utils::FindEpisodeMutable(uri, &db_);
   }
 
+  std::optional<Episode> FindEpisode(const EpisodeUri& uri) {
+    return utils::FindEpisode(uri, &db_);
+  }
+
   void ApplyUpdate(const EpisodeUpdate& update) {
     utils::ApplyUpdate(update, &db_);
   }
