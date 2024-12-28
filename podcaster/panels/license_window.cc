@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2024 Tomas Krupka
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "podcaster/panels/license_window.h"
 
 #include <algorithm>
