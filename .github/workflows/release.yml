@@ -20,7 +20,7 @@ jobs:
     - name: Build
       id: build
       run: |
-        ./docker/build_muos_archive.sh
+        echo "Hello world" > export/tiny-0.1.0.tar.gz
         release_filename=`ls export/tiny*`
         echo "release_filename=$release_filename" >> "$GITHUB_OUTPUT"
 
