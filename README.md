@@ -23,6 +23,10 @@ Minimalistic podcast player usable on handheld devices.
 [tidy-html5](https://github.com/htacg/tidy-html5),
 [Noto fonts](https://fonts.google.com/noto)
 
+## Install
+
+Binaries for [MuOS](https://muos.dev/) are available in the releases section, install them via the archive manager.
+
 ## Build instructions
 
 ### NixOS
@@ -45,7 +49,7 @@ docker build -f docker/Dockerfile .
 
 ### MuOS
 
-See the example script which build and exports the app for use with the [MuOS](https://muos.dev/) [Archive Manager](https://muos.dev/help/archive).
+See the example script which builds and exports the app for use with the [MuOS](https://muos.dev/) [Archive Manager](https://muos.dev/help/archive).
 
 ```
 ./docker/build_muos_archive.sh
