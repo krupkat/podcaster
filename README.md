@@ -6,6 +6,11 @@ Minimalistic podcast player usable on handheld devices.
  - play / pause / resume
  - persistent playback when the client app is off
 
+![Download](https://gist.githubusercontent.com/krupkat/2f44804c3e60d32ff247a1006738fd06/raw/a2dbc9b595fb23a46269d2a68f5bce95fd5805c6/screen1.png) | ![Playback](https://gist.githubusercontent.com/krupkat/2f44804c3e60d32ff247a1006738fd06/raw/a2dbc9b595fb23a46269d2a68f5bce95fd5805c6/screen2.png)
+--- | ---
+
+</div>
+
 ## Built with
 
 [imgui](https://github.com/ocornut/imgui),
