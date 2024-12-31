@@ -6,6 +6,11 @@ Minimalistic podcast player usable on handheld devices.
  - play / pause / resume
  - persistent playback when the client app is off
 
+![Download](https://gist.githubusercontent.com/krupkat/2f44804c3e60d32ff247a1006738fd06/raw/a2dbc9b595fb23a46269d2a68f5bce95fd5805c6/screen1.png) | ![Playback](https://gist.githubusercontent.com/krupkat/2f44804c3e60d32ff247a1006738fd06/raw/a2dbc9b595fb23a46269d2a68f5bce95fd5805c6/screen2.png)
+--- | ---
+
+</div>
+
 ## Built with
 
 [imgui](https://github.com/ocornut/imgui),
@@ -17,6 +22,10 @@ Minimalistic podcast player usable on handheld devices.
 [pugixml](https://github.com/zeux/pugixml),
 [tidy-html5](https://github.com/htacg/tidy-html5),
 [Noto fonts](https://fonts.google.com/noto)
+
+## Install
+
+Binaries for [MuOS](https://muos.dev/) are available in the releases section, install them via the archive manager.
 
 ## Build instructions
 
@@ -40,7 +49,7 @@ docker build -f docker/Dockerfile .
 
 ### MuOS
 
-See the example script which build and exports the app for use with the [MuOS](https://muos.dev/) [Archive Manager](https://muos.dev/help/archive).
+See the example script which builds and exports the app for use with the [MuOS](https://muos.dev/) [Archive Manager](https://muos.dev/help/archive).
 
 ```
 ./docker/build_muos_archive.sh
