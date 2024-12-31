@@ -148,6 +148,7 @@ std::optional<podcaster::Podcast> DonwloadAndParseFeed(
     curlpp::Easy my_request;
     my_request.setOpt<curlpp::options::Url>(feed_uri);
     my_request.setOpt<curlpp::options::WriteStream>(&feed);
+    my_request.setOpt<curlpp::options::FollowLocation>(true);
 #ifdef PODCASTER_HANDHELD_BUILD
     my_request.setOpt<curlpp::options::CaInfo>(
         "/etc/ssl/certs/ca-certificates.crt");
