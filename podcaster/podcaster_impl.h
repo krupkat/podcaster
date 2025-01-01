@@ -22,7 +22,7 @@ struct ParsedDescription {
 
 ParsedDescription ParseDescription(const std::string& input);
 
-std::string DownloadFilename(const std::string& episode_uri);
+std::string DownloadFilename(const std::string& podcast_uri, const std::string& episode_uri);
 
 enum class QueueFlags { kTransient, kPersist };
 

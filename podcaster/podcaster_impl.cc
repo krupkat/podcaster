@@ -39,19 +39,24 @@ podcaster::Config LoadConfig(const std::filesystem::path& data_dir) {
   return config;
 }
 
-std::string DownloadFilename(const std::string& episode_uri) {
+std::string DownloadFilename(const std::string& podcast_uri,
+                             const std::string& episode_uri) {
+  std::string filename = episode_uri;
+
   auto last_slash = std::find(episode_uri.rbegin(), episode_uri.rend(), '/');
-  if (last_slash == episode_uri.rend()) {
-    return episode_uri;
+  if (last_slash != episode_uri.rend()) {
+    int cut = std::distance(last_slash, episode_uri.rend());
+    filename = episode_uri.substr(cut);
   }
-  int cut = std::distance(last_slash, episode_uri.rend());
-  std::string filename = episode_uri.substr(cut);
+
   auto last_question = std::find(filename.begin(), filename.end(), '?');
   if (last_question != filename.end()) {
-    filename =
-        filename.substr(0, std::distance(filename.begin(), last_question));
+    int cut = std::distance(filename.begin(), last_question);
+    filename = filename.substr(0, cut);
   }
-  return filename;
+
+  auto hash = std::hash<std::string>{}(podcast_uri);
+  return std::format("{}_{}", hash, filename);
 }
 
 int XferInfoCallbackFunctor::Execute(curl_off_t dltotal, curl_off_t dlnow,
@@ -170,7 +175,8 @@ void PlaybackController::Play(const podcaster::EpisodeUri& uri) {
 
   if (auto episode = impl_->db_->FindEpisode(uri); episode) {
     std::filesystem::path download_path =
-        impl_->data_dir_ / DownloadFilename(uri.episode_uri());
+        impl_->data_dir_ /
+        DownloadFilename(uri.podcast_uri(), uri.episode_uri());
 
     if (auto music_ptr = sdl::LoadMusic(download_path); music_ptr) {
       music_ = {std::move(music_ptr), uri};
@@ -356,7 +362,7 @@ grpc::Status PodcasterImpl::ShutdownIfNotPlaying(
 void PodcasterImpl::DeleteImpl(const podcaster::EpisodeUri& uri,
                                QueueFlags flags) {
   std::filesystem::path download_path =
-      data_dir_ / DownloadFilename(uri.episode_uri());
+      data_dir_ / DownloadFilename(uri.podcast_uri(), uri.episode_uri());
   std::filesystem::remove(download_path);
 
   QueueDownloadProgress(uri, 0, 0, flags);
@@ -463,7 +469,7 @@ grpc::Status PodcasterImpl::Download(grpc::ServerContext* context,
     QueueDownloadStatus(uri, podcaster::DownloadStatus::DOWNLOAD_IN_PROGRESS);
 
     std::filesystem::path download_path =
-        data_dir_ / DownloadFilename(uri.episode_uri());
+        data_dir_ / DownloadFilename(uri.podcast_uri(), uri.episode_uri());
     std::ofstream download_file(download_path, std::ios::binary);
 
     if (not download_file.is_open()) {
