@@ -21,6 +21,7 @@ Minimalistic podcast player usable on handheld devices.
 [grpc](https://grpc.io/),
 [pugixml](https://github.com/zeux/pugixml),
 [tidy-html5](https://github.com/htacg/tidy-html5),
+[utfcpp](https://github.com/nemtrif/utfcpp),
 [Noto fonts](https://fonts.google.com/noto)
 
 ## Install
