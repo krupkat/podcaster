@@ -78,9 +78,11 @@ target_include_directories(podcaster_client PRIVATE .)
 
 add_executable(podcasterd
   podcaster/podcaster.cc
+  podcaster/podcaster_impl.cc
   podcaster/database.cc
   podcaster/sdl_utils.cc
   podcaster/tidy_utils.cc
+  podcaster/xml_utils.cc
 )
 target_link_libraries(podcasterd PRIVATE
   podcaster_api
