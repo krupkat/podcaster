@@ -22,9 +22,11 @@ pkgs.mkShell {
     imgui_sdl
     html-tidy
     pugixml
+    utf8cpp
     clang-tools_18
     gdb
     conan
+    catch2_3
     (python3.withPackages (pkgs: with pkgs; [
       autopep8
       jinja2

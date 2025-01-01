@@ -3,9 +3,13 @@ cmake_minimum_required(VERSION 3.21)
 project(podcaster)
 
 # defaults work on nix
+
+OPTION(BUILD_TESTING "Build tests" OFF)
 option(PODCASTER_BUILD_IMGUI_EXTRA "Build ImGui with extra features" OFF)
 option(PODCASTER_PREFER_PKGCONFIG "Use curlpp from pkgconfig" ON)
 option(PODCASTER_HANDHELD_BUILD "Build for handheld devices" OFF)
+
+include(CTest)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -17,6 +21,11 @@ find_package(spdlog REQUIRED)
 find_package(gRPC REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(pugixml REQUIRED)
+find_package(utf8cpp REQUIRED)
+
+if(NOT TARGET utf8cpp::utf8cpp)
+  add_library(utf8cpp::utf8cpp ALIAS utf8cpp)
+endif()
 
 find_package(imgui REQUIRED)
 if (PODCASTER_BUILD_IMGUI_EXTRA)
@@ -76,15 +85,15 @@ target_link_libraries(podcaster_client PRIVATE
 )
 target_include_directories(podcaster_client PRIVATE .)
 
-add_executable(podcasterd
-  podcaster/podcaster.cc
+add_library(podcaster_impl STATIC
   podcaster/podcaster_impl.cc
   podcaster/database.cc
   podcaster/sdl_utils.cc
   podcaster/tidy_utils.cc
   podcaster/xml_utils.cc
 )
-target_link_libraries(podcasterd PRIVATE
+
+target_link_libraries(podcaster_impl PUBLIC
   podcaster_api
   curlpp::curlpp
   protobuf::libprotobuf
@@ -93,8 +102,21 @@ target_link_libraries(podcasterd PRIVATE
   tidy-html5::tidy-html5
   SDL2::SDL2
   SDL2_mixer::SDL2_mixer
+  utf8cpp::utf8cpp
 )
-target_include_directories(podcasterd PRIVATE .)
+
+target_include_directories(podcaster_impl PUBLIC .)
+
+add_executable(podcasterd podcaster/podcaster.cc)
+target_link_libraries(podcasterd PRIVATE podcaster_impl)
+
+if (BUILD_TESTING)
+  find_package(Catch2 REQUIRED)
+  include(Catch)
+  add_executable(podcaster_impl_test podcaster/podcaster_impl_test.cc)
+  target_link_libraries(podcaster_impl_test PRIVATE podcaster_impl Catch2::Catch2WithMain)
+  catch_discover_tests(podcaster_impl_test)
+endif()
 
 if (PODCASTER_HANDHELD_BUILD)
   target_compile_definitions(podcaster_client PRIVATE PODCASTER_HANDHELD_BUILD)

@@ -15,6 +15,16 @@
 
 namespace imgui {
 
+const ImWchar* GetGlyphRangesCzech() {
+  static const ImWchar ranges[] = {
+      0x0100,
+      0x017F,
+      0,
+  };
+
+  return &ranges[0];
+}
+
 ImGuiContext Init(std::filesystem::path root, SDL_Window* window,
                   SDL_Renderer* renderer) {
   IMGUI_CHECKVERSION();
@@ -47,10 +57,18 @@ ImGuiContext Init(std::filesystem::path root, SDL_Window* window,
   auto imgui_sdl_renderer_backend_quit =
       utils::DestructorCallback([] { ImGui_ImplSDLRenderer2_Shutdown(); });
 
+  ImVector<ImWchar> ranges;
+  ImFontGlyphRangesBuilder builder;
+  builder.AddRanges(imgui_io.Fonts->GetGlyphRangesDefault());
+  builder.AddRanges(GetGlyphRangesCzech());
+  builder.BuildRanges(&ranges);
+
   float scale = 1.8;
   auto font_path = root / "NotoSans-Regular.ttf";
-  auto* font = imgui_io.Fonts->AddFontFromFileTTF(font_path.c_str(),
-                                                  std::roundf(13 * scale));
+  auto* font = imgui_io.Fonts->AddFontFromFileTTF(
+      font_path.c_str(), std::roundf(13 * scale), nullptr, ranges.Data);
+  imgui_io.Fonts->Build();
+
   ImGui::GetStyle().ScaleAllSizes(scale);
 
   return {std::move(imgui_ini_file), std::move(imgui_quit),

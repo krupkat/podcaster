@@ -60,9 +60,9 @@ int XferInfoCallbackFunctor::Execute(curl_off_t dltotal, curl_off_t dlnow,
   return 0;
 }
 
-struct ParsedDescription {
-  std::string short_description;
-  std::string long_description;
+int XferInfoCallback(XferInfoCallbackFunctor* functor, curl_off_t dltotal,
+                     curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) {
+  return functor->Execute(dltotal, dlnow, ultotal, ulnow);
 };
 
 ParsedDescription ParseDescription(const std::string& input) {

@@ -32,6 +32,9 @@ std::string ConvertToXHTML(const std::string& input) {
 
   bool all_ok = true;
   all_ok &= tidyOptSetBool(*tdoc, TidyXhtmlOut, yes) != 0;
+  all_ok &= tidyOptSetBool(*tdoc, TidyQuoteAmpersand, no) != 0;
+  all_ok &= tidyOptSetBool(*tdoc, TidyQuoteMarks, no) != 0;
+  all_ok &= tidyOptSetBool(*tdoc, TidyQuoteNbsp, no) != 0;
   all_ok &= tidyOptSetInt(*tdoc, TidyWrapLen, 0) != 0;
   if (not all_ok) {
     spdlog::error("HTML-tidy configuration error");

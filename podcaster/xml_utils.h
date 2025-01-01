@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <sstream>
+#include <string_view>
 
 #include <pugixml.hpp>
 
@@ -19,9 +20,8 @@ class XHTMLStripWalker : public pugi::xml_tree_walker {
   std::string ResultLong() const { return result_long_.str(); }
 
  private:
-  void Save(const char* str);
-
-  void Put(char c);
+  void SaveUtf8(const char* str);
+  void Put(char32_t code_point, std::string_view bytes);
 
   bool first_char_ = true;
   bool summary_ = true;

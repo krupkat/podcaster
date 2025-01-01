@@ -67,6 +67,7 @@ class PodcasterRecipe(ConanFile):
         self.requires("grpc/1.67.1")
         self.requires("pugixml/1.14")
         self.requires("tidy-html5/5.8.0")
+        self.requires("utfcpp/4.0.5")
 
     def bundled_dependencies(self):
         deps = {
