@@ -120,7 +120,7 @@ endif()
 
 if (PODCASTER_HANDHELD_BUILD)
   target_compile_definitions(podcaster_client PRIVATE PODCASTER_HANDHELD_BUILD)
-  target_compile_definitions(podcasterd PRIVATE PODCASTER_HANDHELD_BUILD)
+  target_compile_definitions(podcaster_impl PUBLIC PODCASTER_HANDHELD_BUILD)
 endif()
 
 set(CMAKE_INSTALL_BINDIR ".podcaster")
