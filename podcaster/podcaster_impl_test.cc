@@ -36,3 +36,13 @@ Arte da Capa: Daltrinador)");
 
   REQUIRE(parsed.long_description == "");
 }
+
+TEST_CASE("Download filename") {
+  REQUIRE(podcaster::DownloadFilename("http://example.com/foo.mp3") ==
+          "foo.mp3");
+  REQUIRE(podcaster::DownloadFilename(
+              "https://gazetis.to/api/v1/podcasts/"
+              "podcast-313-arena-1-bilance-herniho-roku-2024.m4a?player_key="
+              "asdasdasdasdasdas&publication=modrak") ==
+          "podcast-313-arena-1-bilance-herniho-roku-2024.m4a");
+}

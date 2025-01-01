@@ -45,7 +45,13 @@ std::string DownloadFilename(const std::string& episode_uri) {
     return episode_uri;
   }
   int cut = std::distance(last_slash, episode_uri.rend());
-  return episode_uri.substr(cut);
+  std::string filename = episode_uri.substr(cut);
+  auto last_question = std::find(filename.begin(), filename.end(), '?');
+  if (last_question != filename.end()) {
+    filename =
+        filename.substr(0, std::distance(filename.begin(), last_question));
+  }
+  return filename;
 }
 
 int XferInfoCallbackFunctor::Execute(curl_off_t dltotal, curl_off_t dlnow,
