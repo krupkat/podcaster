@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1-labs
 
-FROM ubuntu:24.04 AS dev
+ARG BASE_IMAGE=ubuntu:24.04
+
+FROM ${BASE_IMAGE} AS dev
 
 SHELL ["/bin/bash", "-c"]
 
@@ -26,6 +28,15 @@ COPY docker/conan_profile_default /root/.conan/profiles/default
 COPY docker/conan_profile_aarch64 /root/.conan/profiles/aarch64
 COPY docker/settings_user.yml /root/.conan/settings_user.yml
 
+ARG USE_EXTERNAL_CACHE=0
+
+# populate run mount cache
+RUN --mount=source=.cache,target=/cache,rw=true \
+    --mount=type=cache,target=/root/.conan/p \
+    if [ $USE_EXTERNAL_CACHE -eq 1 ]; then \
+        mkdir -p /cache/.conan/p && cp -r /cache/.conan/p /root/.conan; \
+    fi
+
 # install build dependencies
 
 RUN --mount=type=tmpfs,target=/build \
@@ -50,11 +61,21 @@ COPY --exclude=podcaster/dependencies.h \
      --exclude=podcaster/licenses \
     podcaster podcaster
 
+ARG CFW="muos"
+
 RUN --mount=type=cache,target=/root/.conan/p \
     conan install . --build missing -pr:b=default -pr:h=aarch64 && \
-    cmake --preset conan-minsizerel -DCMAKE_INSTALL_PREFIX=/install && \
+    cmake --preset conan-minsizerel -DCMAKE_INSTALL_PREFIX=/install -DPODCASTER_CFW=${CFW} && \
     cmake --build --preset conan-minsizerel --target install/strip && \
     upx /install/.podcaster/podcasterd && \
     upx /install/.podcaster/podcaster_client
+
+# export run mount cache
+WORKDIR /cache
+
+RUN --mount=type=cache,target=/root/.conan/p \
+    if [ $USE_EXTERNAL_CACHE -eq 1 ]; then \
+        mkdir .conan && cp -r /root/.conan/p .conan; \
+    fi
 
 ENTRYPOINT ["/bin/bash"]

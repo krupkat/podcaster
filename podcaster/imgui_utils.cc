@@ -75,4 +75,10 @@ ImGuiContext Init(std::filesystem::path root, SDL_Window* window,
           std::move(imgui_sdl_backend_quit),
           std::move(imgui_sdl_renderer_backend_quit)};
 }
+
+void SetController(SDL_GameController* controller) {
+  ImGui_ImplSDL2_SetGamepadMode(ImGui_ImplSDL2_GamepadMode_Manual, &controller,
+                                1);
+}
+
 }  // namespace imgui

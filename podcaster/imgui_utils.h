@@ -45,4 +45,6 @@ void EnableIf(bool condition, TCallbackType callback) {
   }
 }
 
+void SetController(SDL_GameController* controller);
+
 }  // namespace imgui

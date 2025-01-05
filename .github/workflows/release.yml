@@ -11,8 +11,11 @@ on:
 permissions:
   contents: write
 
+env:
+  BASE_IMAGE: "ubuntu:noble-20241118.1"
+
 jobs:
-  upload-release-muos:
+  upload-release:
     runs-on: ubuntu-22.04
 
     steps:
@@ -20,25 +23,43 @@ jobs:
       with:
         ref: ${{inputs.tag}}
 
-    - name: Build
-      id: build
+    - name: Cache Conan
+      uses: actions/cache@v4
+      id: cache-conan
+      with:
+        path: .cache
+        key: conan-${{runner.os}}-${{env.BASE_IMAGE}}-${{hashFiles('docker/conan_profile_*')}}
+
+    - name: Build MuOS
+      id: build_muos
       run: |
-        ./docker/build_muos_archive.sh
-        release_filename=`ls export/tiny*`
+        ./docker/build_muos_archive.sh --build-arg USE_EXTERNAL_CACHE=1 --build-arg BASE_IMAGE=$BASE_IMAGE
+        release_filename=`ls export/tiny-podcaster-muos*`
         echo "release_filename=$release_filename" >> "$GITHUB_OUTPUT"
 
-    - name: Compute checksum
-      env:
-        RELEASE_FILENAME: ${{steps.build.outputs.release_filename}}
+    - name: Build Knulli
+      id: build_knulli
       run: |
-        shasum -a 256 "$RELEASE_FILENAME" > "$RELEASE_FILENAME.sha256"
-        echo "sha256 checksum:"
-        cat "$RELEASE_FILENAME.sha256"
+        ./docker/build_knulli_archive.sh --build-arg USE_EXTERNAL_CACHE=0 --build-arg BASE_IMAGE=$BASE_IMAGE
+        release_filename=`ls export/tiny-podcaster-knulli*`
+        echo "release_filename=$release_filename" >> "$GITHUB_OUTPUT"
+
+    - name: Compute checksums
+      env:
+        MUOS_FILENAME: ${{steps.build_muos.outputs.release_filename}}
+        KNULLI_FILENAME: ${{steps.build_knulli.outputs.release_filename}}
+      run: |
+        shasum -a 256 "$MUOS_FILENAME" > "$MUOS_FILENAME.sha256"
+        cat "$MUOS_FILENAME.sha256"
+        shasum -a 256 "$KNULLI_FILENAME" > "$KNULLI_FILENAME.sha256"
+        cat "$KNULLI_FILENAME.sha256"
 
     - name: Upload release files
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{inputs.tag}}
         files: |
-          ${{steps.build.outputs.release_filename}}
-          ${{steps.build.outputs.release_filename}}.sha256
+          ${{steps.build_muos.outputs.release_filename}}
+          ${{steps.build_muos.outputs.release_filename}}.sha256
+          ${{steps.build_knulli.outputs.release_filename}}
+          ${{steps.build_knulli.outputs.release_filename}}.sha256

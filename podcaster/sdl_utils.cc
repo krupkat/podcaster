@@ -47,8 +47,80 @@ int FindDriver(std::string target_driver) {
   return driver_index;
 }
 
+std::string SwapABXYButtons(const std::string& mapping) {
+  struct ButtonMapping {
+    int index;
+    std::string value;
+  } a_btn, b_btn, x_btn, y_btn;
+
+  std::vector<std::string> parts;
+  std::string part;
+  std::istringstream stream(mapping);
+  int index = 0;
+  while (std::getline(stream, part, ',')) {
+    parts.push_back(part);
+    if (auto split = std::find(part.begin(), part.end(), ':');
+        split != part.end()) {
+      std::string key = part.substr(0, split - part.begin());
+      std::string value = part.substr(split - part.begin() + 1);
+      if (key == "a") {
+        a_btn = {index, value};
+      } else if (key == "b") {
+        b_btn = {index, value};
+      } else if (key == "x") {
+        x_btn = {index, value};
+      } else if (key == "y") {
+        y_btn = {index, value};
+      }
+    }
+    index++;
+  }
+
+  std::swap(a_btn.value, b_btn.value);
+  std::swap(x_btn.value, y_btn.value);
+
+  parts[a_btn.index] = "a:" + a_btn.value;
+  parts[b_btn.index] = "b:" + b_btn.value;
+  parts[x_btn.index] = "x:" + x_btn.value;
+  parts[y_btn.index] = "y:" + y_btn.value;
+
+  std::stringstream swapped_mapping;
+  for (const auto& part : parts) {
+    swapped_mapping << part << ",";
+  }
+
+  return swapped_mapping.str();
+}
+
+void UpdateMapping(int joystick_index) {
+  SDLCharPtr mapping = {SDL_GameControllerMappingForDeviceIndex(joystick_index),
+                        &SDL_free};
+  if (not mapping) {
+    utils::Throw<std::runtime_error>("Error getting controller mapping: {}",
+                                     SDL_GetError());
+  }
+
+  std::string mapping_str{mapping.get()};
+  std::string target = "Anbernic";
+
+  if (mapping_str.find(target) != std::string::npos) {
+    auto swapped_mapping = SwapABXYButtons(mapping_str);
+    spdlog::info("Swapped ABXY buttons for Anbernic controller {}",
+                 swapped_mapping);
+
+    // update sdl button mapping
+    int ret = SDL_GameControllerAddMapping(swapped_mapping.c_str());
+    if (ret != 0) {
+      spdlog::error("Error adding swapped controller mapping: {}",
+                    SDL_GetError());
+    }
+  }
+}
+
 SDLGameControllerContext FindController(
-    std::vector<std::string> target_controller) {
+    std::vector<std::string> preferred_controllers) {
+  std::optional<SDLGameControllerContext> controller_ctx;
+
   int joysticks = SDL_NumJoysticks();
   for (int i = 0; i < joysticks; i++) {
     std::string joystick_name = SDL_JoystickNameForIndex(i);
@@ -56,18 +128,30 @@ SDLGameControllerContext FindController(
       continue;
     }
 
+    //UpdateMapping(i); this doesn't work
+
     auto controller = SDLGameControllerPtr{SDL_GameControllerOpen(i),
                                            {&SDL_GameControllerClose}};
     if (controller) {
       std::string controller_name = SDL_GameControllerName(controller.get());
-      if (std::find(target_controller.begin(), target_controller.end(),
-                    controller_name) != target_controller.end()) {
-        return {controller_name, std::move(controller)};
+      bool is_preferred =
+          std::find_if(preferred_controllers.begin(),
+                       preferred_controllers.end(),
+                       [&controller_name](const std::string& target) {
+                         return controller_name.starts_with(target);
+                       }) != preferred_controllers.end();
+
+      if (is_preferred or not controller_ctx) {
+        controller_ctx = {controller_name, i, std::move(controller)};
       }
     }
   }
-  utils::Throw<std::runtime_error>("Couldn't find controller");
-  return {"", {nullptr, {&SDL_GameControllerClose}}};
+
+  if (not controller_ctx) {
+    utils::Throw<std::runtime_error>("Couldn't find controller");
+  }
+
+  return std::move(controller_ctx.value());
 }
 
 SDLContext Init(Uint32 flags) {

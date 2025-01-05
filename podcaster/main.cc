@@ -18,8 +18,8 @@
 #include "podcaster/sdl_utils.h"
 
 const std::string kControllerDatabasePath = "/usr/lib/gamecontrollerdb.txt";
-const std::vector<std::string> kTargetController = {"ANBERNIC-keys",
-                                                    "Deeplay-keys"};
+const std::vector<std::string> kPreferredController = {
+    "ANBERNIC-keys", "Deeplay-keys", "Anbernic"};
 
 #ifdef PODCASTER_HANDHELD_BUILD
 const std::string kTargetDriver = "mali";
@@ -45,15 +45,16 @@ int main(int /*unused*/, char** /*unused*/) {
   auto exe_path = sdl::GetExePath();
   spdlog::info("Exe path: {}", exe_path.string());
 
-#ifdef PODCASTER_HANDHELD_BUILD
-  auto controller_ctx = sdl::FindController(kTargetController);
-  spdlog::info("Controller found: {}", controller_ctx.name);
-#endif
-
   // imgui
   auto imgui_ctx =
       imgui::Init(exe_path, window_ctx.handle.get(), window_ctx.renderer.get());
   spdlog::info("ImGui initialized: {}", imgui_ctx.imgui_ini_file->string());
+
+#ifdef PODCASTER_HANDHELD_BUILD
+  auto controller_ctx = sdl::FindController(kPreferredController);
+  spdlog::info("Controller found: {}", controller_ctx.name);
+  imgui::SetController(controller_ctx.handle.get());
+#endif
 
   // gui
   podcaster::PodcasterClient podcaster_client(grpc::CreateChannel(
@@ -119,7 +120,6 @@ int main(int /*unused*/, char** /*unused*/) {
     imgui::Render(
         [&]() {
           podcaster_gui.Run(action);
-          // ImGui::ShowDemoWindow();
         },
         window_ctx.renderer.get());
 
