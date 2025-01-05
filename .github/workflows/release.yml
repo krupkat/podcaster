@@ -20,25 +20,36 @@ jobs:
       with:
         ref: ${{inputs.tag}}
 
-    - name: Build
-      id: build
+    - name: Build MuOS
+      id: build_muos
       run: |
         ./docker/build_muos_archive.sh
         release_filename=`ls export/tiny*`
         echo "release_filename=$release_filename" >> "$GITHUB_OUTPUT"
 
-    - name: Compute checksum
-      env:
-        RELEASE_FILENAME: ${{steps.build.outputs.release_filename}}
+    - name: Build Knulli
+      id: build_knulli
       run: |
-        shasum -a 256 "$RELEASE_FILENAME" > "$RELEASE_FILENAME.sha256"
-        echo "sha256 checksum:"
-        cat "$RELEASE_FILENAME.sha256"
+        ./docker/build_knulli_archive.sh
+        release_filename=`ls export/tiny*`
+        echo "release_filename=$release_filename" >> "$GITHUB_OUTPUT"
+
+    - name: Compute checksums
+      env:
+        MUOS_FILENAME: ${{steps.build_muos.outputs.release_filename}}
+        KNULLI_FILENAME: ${{steps.build_knulli.outputs.release_filename}}
+      run: |
+        shasum -a 256 "$MUOS_FILENAME" > "$MUOS_FILENAME.sha256"
+        cat "$MUOS_FILENAME.sha256"
+        shasum -a 256 "$KNULLI_FILENAME" > "$KNULLI_FILENAME.sha256"
+        cat "$KNULLI_FILENAME.sha256"
 
     - name: Upload release files
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{inputs.tag}}
         files: |
-          ${{steps.build.outputs.release_filename}}
-          ${{steps.build.outputs.release_filename}}.sha256
+          ${{steps.build_muos.outputs.release_filename}}
+          ${{steps.build_muos.outputs.release_filename}}.sha256
+          ${{steps.build_knulli.outputs.release_filename}}
+          ${{steps.build_knulli.outputs.release_filename}}.sha256
