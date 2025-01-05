@@ -27,6 +27,10 @@ jobs:
         path: .conan/p
         key: ${{runner.os}}-conan-${{hashFiles('docker/conan_profile_*')}}
 
+    - name: Create empty conan directory
+      if: steps.cache-conan.outputs.cache-hit != 'true'
+      run: mkdir -p .conan/p
+
     - name: Build MuOS
       id: build_muos
       run: |
