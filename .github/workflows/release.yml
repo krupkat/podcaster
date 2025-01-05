@@ -11,8 +11,11 @@ on:
 permissions:
   contents: write
 
+env:
+  BASE_IMAGE: "ubuntu:noble-20241118.1"
+
 jobs:
-  upload-release-muos:
+  upload-release:
     runs-on: ubuntu-22.04
 
     steps:
@@ -24,24 +27,20 @@ jobs:
       uses: actions/cache@v4
       id: cache-conan
       with:
-        path: .conan/p
-        key: ${{runner.os}}-conan-${{hashFiles('docker/conan_profile_*')}}
-
-    - name: Create empty conan directory
-      if: steps.cache-conan.outputs.cache-hit != 'true'
-      run: mkdir -p .conan/p
+        path: .cache
+        key: conan-${{runner.os}}-${{env.BASE_IMAGE}}-${{hashFiles('docker/conan_profile_*')}}
 
     - name: Build MuOS
       id: build_muos
       run: |
-        ./docker/build_muos_archive.sh
+        ./docker/build_muos_archive.sh --build-arg USE_EXTERNAL_CACHE=1 --build-arg BASE_IMAGE=$BASE_IMAGE
         release_filename=`ls export/tiny*`
         echo "release_filename=$release_filename" >> "$GITHUB_OUTPUT"
 
     - name: Build Knulli
       id: build_knulli
       run: |
-        ./docker/build_knulli_archive.sh
+        ./docker/build_knulli_archive.sh --build-arg USE_EXTERNAL_CACHE=1 --build-arg BASE_IMAGE=$BASE_IMAGE
         release_filename=`ls export/tiny*`
         echo "release_filename=$release_filename" >> "$GITHUB_OUTPUT"
 

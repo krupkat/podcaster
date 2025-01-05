@@ -8,3 +8,4 @@ CMakeUserPresets.json
 .direnv
 state
 export
+.cache
