@@ -26,7 +26,10 @@ Minimalistic podcast player usable on handheld devices.
 
 ## Install
 
-Binaries for [MuOS](https://muos.dev/) and [Knulli](https://knulli.org/) are available in the releases section, install them via the archive manager.
+Binaries for [MuOS](https://muos.dev/) and [Knulli](https://knulli.org/) are available in the [releases](https://github.com/krupkat/podcaster/releases) section.
+
+ - On MuOS, install via the [archive manager](https://muos.dev/help/archive)
+ - On Knulli, unpack the zip file in `/userdata/roms/tools`
 
 ## Build instructions
 
@@ -40,20 +43,13 @@ cmake -G Ninja -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=i
 cmake --build build --target install
 ```
 
-### Cross compile for ARM64
+### MuOS + Knulli
 
-Build the app inside a Ubuntu based dev image:
-
-```
-docker build -f docker/Dockerfile .
-```
-
-### MuOS
-
-See the example script which builds and exports the app for use with the [MuOS](https://muos.dev/) [Archive Manager](https://muos.dev/help/archive).
+See the example scripts which build a distribution specific zip file in the `export` directory:
 
 ```
 ./docker/build_muos_archive.sh
+./docker/build_knulli_archive.sh
 ```
 
 ### Other distros

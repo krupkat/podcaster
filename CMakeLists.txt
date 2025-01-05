@@ -168,4 +168,8 @@ if (PODCASTER_CFW STREQUAL "knulli")
     DESTINATION "."
     RENAME "Podcaster.sh"
   )
+  install(FILES
+    "podcaster/assets/podcaster.png"
+    DESTINATION "images"
+  )
 endif()

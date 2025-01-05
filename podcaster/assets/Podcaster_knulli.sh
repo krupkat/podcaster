@@ -9,6 +9,7 @@ if pgrep "podcasterd" > /dev/null; then
     echo "Already running"
 else
     nohup ./podcasterd $DB_DIR &> server.log &
+    sleep 0.3
 fi
 
 ./podcaster_client &> client.log
