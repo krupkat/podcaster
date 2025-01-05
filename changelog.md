@@ -1,3 +1,8 @@
+# 0.3.0
+
+ - Knulli support
+ - Improved controller detection
+
 # 0.2.0
 
  - Fix html description parsing (&nbsp)
@@ -18,3 +23,4 @@ Initial version
  - subsribe to podcast rss feeds
  - play / pause / resume
  - persistent playback when the client is off
+ - MuOS support

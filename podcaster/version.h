@@ -14,7 +14,7 @@ struct Version {
   int patch;
 };
 
-constexpr Version Current() { return {0, 2, 0}; }
+constexpr Version Current() { return {0, 3, 0}; }
 
 inline std::string ToString() {
   const Version version = Current();
