@@ -26,7 +26,7 @@ Minimalistic podcast player usable on handheld devices.
 
 ## Install
 
-Binaries for [MuOS](https://muos.dev/) are available in the releases section, install them via the archive manager.
+Binaries for [MuOS](https://muos.dev/) and [Knulli](https://knulli.org/) are available in the releases section, install them via the archive manager.
 
 ## Build instructions
 

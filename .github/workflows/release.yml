@@ -20,6 +20,13 @@ jobs:
       with:
         ref: ${{inputs.tag}}
 
+    - name: Cache Conan
+      uses: actions/cache@v4
+      id: cache-conan
+      with:
+        path: .conan/p
+        key: ${{runner.os}}-conan-${{hashFiles('docker/conan_profile_*')}}
+
     - name: Build MuOS
       id: build_muos
       run: |

@@ -30,7 +30,7 @@ COPY docker/settings_user.yml /root/.conan/settings_user.yml
 
 RUN --mount=type=tmpfs,target=/build \
     --mount=source=docker/host_tools.py,target=/build/conanfile.py \
-    --mount=type=cache,target=/root/.conan/p \
+    --mount=source=.conan/p,target=/root/.conan/p \
     cd /build && \
     conan install . --build missing && \
     source host_tools_env.sh && \
@@ -52,7 +52,7 @@ COPY --exclude=podcaster/dependencies.h \
 
 ARG CFW="muos"
 
-RUN --mount=type=cache,target=/root/.conan/p \
+RUN --mount=source=.conan/p,target=/root/.conan/p \
     conan install . --build missing -pr:b=default -pr:h=aarch64 && \
     cmake --preset conan-minsizerel -DCMAKE_INSTALL_PREFIX=/install -DPODCASTER_CFW=${CFW} && \
     cmake --build --preset conan-minsizerel --target install/strip && \
