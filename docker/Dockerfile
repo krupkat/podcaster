@@ -31,7 +31,7 @@ COPY docker/settings_user.yml /root/.conan/settings_user.yml
 ARG USE_EXTERNAL_CACHE=0
 
 # populate run mount cache
-RUN --mount=source=.cache,target=/cache \
+RUN --mount=source=.cache,target=/cache,rw=true \
     --mount=type=cache,target=/root/.conan/p \
     if [ $USE_EXTERNAL_CACHE -eq 1 ]; then \
         mkdir -p /cache/.conan/p && cp -r /cache/.conan/p /root/.conan; \
