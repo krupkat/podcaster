@@ -113,9 +113,15 @@ target_link_libraries(podcasterd PRIVATE podcaster_impl)
 if (BUILD_TESTING)
   find_package(Catch2 REQUIRED)
   include(Catch)
+
   add_executable(podcaster_impl_test podcaster/podcaster_impl_test.cc)
   target_link_libraries(podcaster_impl_test PRIVATE podcaster_impl Catch2::Catch2WithMain)
   catch_discover_tests(podcaster_impl_test)
+
+  add_executable(sdl_utils_test podcaster/sdl_utils_test.cc podcaster/sdl_utils.cc)
+  target_link_libraries(sdl_utils_test PRIVATE SDL2::SDL2 spdlog::spdlog Catch2::Catch2WithMain)
+  target_include_directories(sdl_utils_test PRIVATE .)
+  catch_discover_tests(sdl_utils_test)
 endif()
 
 if (PODCASTER_HANDHELD_BUILD)

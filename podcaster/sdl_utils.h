@@ -19,6 +19,7 @@ using SDLRendererPtr =
     std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)>;
 using SDLGameControllerPtr =
     std::unique_ptr<SDL_GameController, decltype(&SDL_GameControllerClose)>;
+using SDLCharPtr = std::unique_ptr<char, decltype(&SDL_free)>;
 
 struct SDLContext {
   utils::DestructorCallback sdl_quit;
@@ -33,6 +34,7 @@ struct SDLWindowContext {
 
 struct SDLGameControllerContext {
   std::string name;
+  int joystick_index;
   SDLGameControllerPtr handle;
 };
 
@@ -44,8 +46,10 @@ int FindDriver(std::string target_driver);
 
 void VerifyVersion();
 
+std::string SwapABXYButtons(const std::string& mapping);
+
 SDLGameControllerContext FindController(
-    std::vector<std::string> target_controller);
+    std::vector<std::string> preferred_controllers);
 
 std::filesystem::path GetExePath();
 
