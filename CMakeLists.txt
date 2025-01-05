@@ -4,10 +4,11 @@ project(podcaster)
 
 # defaults work on nix
 
-OPTION(BUILD_TESTING "Build tests" OFF)
+option(BUILD_TESTING "Build tests" OFF)
 option(PODCASTER_BUILD_IMGUI_EXTRA "Build ImGui with extra features" OFF)
 option(PODCASTER_PREFER_PKGCONFIG "Use curlpp from pkgconfig" ON)
 option(PODCASTER_HANDHELD_BUILD "Build for handheld devices" OFF)
+set(PODCASTER_CFW "muos" CACHE STRING "Custom firmware to build for (muos, knulli)")
 
 include(CTest)
 
@@ -154,7 +155,21 @@ install(FILES
   "podcaster/assets/NotoSans-Regular.ttf"
   DESTINATION ".podcaster"
 )
-install(FILES
-  "podcaster/assets/Podcaster.sh"
-  DESTINATION "."
-)
+if (PODCASTER_CFW STREQUAL "muos")
+  install(FILES
+    "podcaster/assets/Podcaster_muos.sh"
+    DESTINATION "."
+    RENAME "Podcaster.sh"
+  )
+endif()
+if (PODCASTER_CFW STREQUAL "knulli")
+  install(FILES
+    "podcaster/assets/Podcaster_knulli.sh"
+    DESTINATION "."
+    RENAME "Podcaster.sh"
+  )
+  install(FILES
+    "podcaster/assets/podcaster.png"
+    DESTINATION "images"
+  )
+endif()
