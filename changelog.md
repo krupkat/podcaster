@@ -1,3 +1,8 @@
+# 0.3.1
+
+ - Handle html list in podcast description
+ - Render more utf8 characters
+
 # 0.3.0
 
  - Knulli support
