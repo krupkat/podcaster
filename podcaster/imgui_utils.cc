@@ -61,6 +61,11 @@ ImGuiContext Init(std::filesystem::path root, SDL_Window* window,
   ImFontGlyphRangesBuilder builder;
   builder.AddRanges(imgui_io.Fonts->GetGlyphRangesDefault());
   builder.AddRanges(GetGlyphRangesCzech());
+  builder.AddChar(0x2013); // –
+  builder.AddChar(0x2014); // —
+  builder.AddChar(0x2018); // ’
+  builder.AddChar(0x2019); // ’
+  builder.AddChar(0x2026); // …
   builder.BuildRanges(&ranges);
 
   float scale = 1.8;

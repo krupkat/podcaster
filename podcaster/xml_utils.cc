@@ -23,8 +23,12 @@ bool XHTMLStripWalker::for_each(pugi::xml_node& node) {
     SaveUtf8(node.value());
   }
   if (node.type() == pugi::node_element) {
-    if (std::string name = node.name(); name == "p" || name == "br") {
+    std::string name = node.name();
+    if (name == "p" || name == "br") {
       SaveUtf8("\n");
+    }
+    if (name == "li") {
+      SaveUtf8("\n - ");
     }
   }
   return true;
