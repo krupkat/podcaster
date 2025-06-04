@@ -64,7 +64,7 @@ COPY --exclude=podcaster/dependencies.h \
 ARG CFW="muos"
 
 RUN --mount=type=cache,target=/root/.conan/p \
-    conan install . --build missing -pr:b=default -pr:h=aarch64 && \
+    conan install . --build missing -o '&:handheld=True' -pr:b=default -pr:h=aarch64 && \
     cmake --preset conan-minsizerel -DCMAKE_INSTALL_PREFIX=/install -DPODCASTER_CFW=${CFW} && \
     cmake --build --preset conan-minsizerel --target install/strip && \
     upx /install/.podcaster/podcasterd && \

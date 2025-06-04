@@ -39,8 +39,9 @@ Run from the repository root:
 
 ```
 nix-shell nix/default.nix
-cmake -G Ninja -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=install
-cmake --build build --target install
+conan install . --build missing
+cmake --preset conan-release -DCMAKE_INSTALL_PREFIX=install
+cmake --build --preset conan-release --target install
 ```
 
 ### MuOS + Knulli
@@ -54,7 +55,7 @@ See the example scripts which build a distribution specific zip file in the `exp
 
 ### Other distros
 
-It should be possible to build on any distro using the [Conan](https://conan.io/) package manager to install prerequisites, however you'll need to edit `conanfile.py` to enable some disabled SDL features.
+It should be possible to build on any distro using the [Conan](https://conan.io/) package manager to install prerequisites.
 
 ```
 conan install . --build=missing

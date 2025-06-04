@@ -24,26 +24,14 @@ class PodcasterRecipe(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     generators = "CMakeDeps"
 
+    options = {
+        'handheld': [True, False],
+    }
+
     default_options = {
-        "sdl/*:shared": True,
-        "sdl/*:alsa": False,
-        "sdl/*:pulse": False,
-        "sdl/*:x11": False,
-        "sdl/*:xcursor": False,
-        "sdl/*:xinerama": False,
-        "sdl/*:xinput": False,
-        "sdl/*:xrandr": False,
-        "sdl/*:xscrnsaver": False,
-        "sdl/*:xshape": False,
-        "sdl/*:xvm": False,
-        "sdl/*:wayland": False,
-        "sdl/*:opengl": False,
-        "sdl/*:opengles": True,
-        "sdl/*:vulkan": False,
-        "sdl_mixer/*:shared": True,
+        'handheld': False,
+        "sdl_mixer/*:flac": False,
         "sdl_mixer/*:opus": False,
-        "imgui/*:shared": False,
-        "spdlog/*:shared": False,
         "spdlog/*:use_std_fmt": True,
         "grpc/*:codegen": True,
         "grpc/*:cpp_plugin": True,
@@ -59,13 +47,13 @@ class PodcasterRecipe(ConanFile):
     }
 
     def requirements(self):
-        self.requires("imgui/1.91.5")
+        self.requires("imgui/1.91.8")
         self.requires("sdl/2.28.5")
         self.requires("sdl_mixer/2.8.0")
-        self.requires("spdlog/1.15.0")
+        self.requires("spdlog/1.15.1")
         self.requires("curlpp/0.8.1.cci.20240530")
-        self.requires("grpc/1.67.1")
-        self.requires("pugixml/1.14")
+        self.requires("grpc/1.72.0")
+        self.requires("pugixml/1.15")
         self.requires("tidy-html5/5.8.0")
         self.requires("utfcpp/4.0.5")
 
@@ -108,12 +96,30 @@ class PodcasterRecipe(ConanFile):
 
         return licenses
 
+    def configure(self):
+        if self.options.handheld:
+            # we'll use the system libraries of sdl and sdl_mixer
+            self.options["sdl/*"].shared = True
+            self.options["sdl/*"].alsa = False
+            self.options["sdl/*"].pulse = False
+            self.options["sdl/*"].x11 = False
+            self.options["sdl/*"].xcursor = False
+            self.options["sdl/*"].xinerama = False
+            self.options["sdl/*"].xinput = False
+            self.options["sdl/*"].xrandr = False
+            self.options["sdl/*"].xscrnsaver = False
+            self.options["sdl/*"].xshape = False
+            self.options["sdl/*"].xvm = False
+            self.options["sdl/*"].wayland = False
+            self.options["sdl/*"].opengl = False
+            self.options["sdl/*"].opengles = False
+            self.options["sdl/*"].vulkan = False
+            self.options["sdl_mixer/*"].shared = True
+
     def generate(self):
         tc = CMakeToolchain(self)
         tc.variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
-        tc.variables["PODCASTER_BUILD_IMGUI_EXTRA"] = "ON"
-        tc.variables["PODCASTER_PREFER_PKGCONFIG"] = "OFF"
-        tc.variables["PODCASTER_HANDHELD_BUILD"] = "ON"
+        tc.variables["PODCASTER_HANDHELD_BUILD"] = "ON" if self.options.handheld else "OFF"
         tc.generate()
 
         # extra imgui files

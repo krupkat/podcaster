@@ -1,0 +1,3 @@
+os:
+  Linux:
+    distro: [ null, 'NixOS' ]
