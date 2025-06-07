@@ -4,9 +4,9 @@ build_type=MinSizeRel
 compiler=gcc
 compiler.cppstd=20
 compiler.libcxx=libstdc++11
-compiler.version=13
+compiler.version=14
 os=Linux
 
 [buildenv]
-CC=gcc-13
-CXX=g++-13
+CC=gcc-14
+CXX=g++-14

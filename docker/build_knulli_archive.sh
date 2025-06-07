@@ -3,15 +3,13 @@
 set -e
 
 VERSION=$(git describe --tags --always --dirty)
-IMAGE_TAG="tiny-podcaster:latest"
+IMAGE_TAG="tiny-podcaster-knulli:latest"
 TMP_DIR=$(mktemp -d)
 
 # Build the image and copy the files out
-mkdir -p .cache
 docker build -t $IMAGE_TAG -f docker/Dockerfile --build-arg CFW=knulli "$@" .
 DOCKER_ID=$(docker create $IMAGE_TAG)
 docker cp $DOCKER_ID:/install/. $TMP_DIR
-docker cp $DOCKER_ID:/cache/. .cache
 docker rm $DOCKER_ID
 
 ( cd $TMP_DIR && zip -r export.zip . )

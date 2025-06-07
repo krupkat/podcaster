@@ -25,11 +25,13 @@ class PodcasterRecipe(ConanFile):
     generators = "CMakeDeps"
 
     options = {
-        'handheld': [True, False],
+        "handheld": [True, False],
+        "skip_generate": [True, False],
     }
 
     default_options = {
-        'handheld': False,
+        "handheld": False,
+        "skip_generate": False,
         "sdl_mixer/*:flac": False,
         "sdl_mixer/*:opus": False,
         "spdlog/*:use_std_fmt": True,
@@ -117,6 +119,9 @@ class PodcasterRecipe(ConanFile):
             self.options["sdl_mixer/*"].shared = True
 
     def generate(self):
+        if self.options.skip_generate:
+            return
+
         tc = CMakeToolchain(self)
         tc.variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
         tc.variables["PODCASTER_HANDHELD_BUILD"] = "ON" if self.options.handheld else "OFF"
