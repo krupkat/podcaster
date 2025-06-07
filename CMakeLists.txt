@@ -2,11 +2,7 @@ cmake_minimum_required(VERSION 3.21)
 
 project(podcaster)
 
-# defaults work on nix
-
 option(BUILD_TESTING "Build tests" OFF)
-option(PODCASTER_BUILD_IMGUI_EXTRA "Build ImGui with extra features" OFF)
-option(PODCASTER_PREFER_PKGCONFIG "Use curlpp from pkgconfig" ON)
 option(PODCASTER_HANDHELD_BUILD "Build for handheld devices" OFF)
 set(PODCASTER_CFW "muos" CACHE STRING "Custom firmware to build for (muos, knulli)")
 
@@ -16,35 +12,18 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(imgui REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_mixer REQUIRED)
 find_package(spdlog REQUIRED)
+find_package(curlpp REQUIRED)
 find_package(gRPC REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(pugixml REQUIRED)
+find_package(tidy-html5 REQUIRED)
 find_package(utf8cpp REQUIRED)
 
-if(NOT TARGET utf8cpp::utf8cpp)
-  add_library(utf8cpp::utf8cpp ALIAS utf8cpp)
-endif()
-
-find_package(imgui REQUIRED)
-if (PODCASTER_BUILD_IMGUI_EXTRA)
-  add_subdirectory(podcaster/external/imgui) # conan
-else()
-  add_library(imgui ALIAS imgui::imgui) # nix
-endif()
-
-if(PODCASTER_PREFER_PKGCONFIG)
-    find_package(PkgConfig REQUIRED) # nix
-    pkg_check_modules(CURLPP REQUIRED IMPORTED_TARGET curlpp)
-    add_library(curlpp::curlpp ALIAS PkgConfig::CURLPP)
-    pkg_check_modules(TIDY REQUIRED IMPORTED_TARGET tidy)
-    add_library(tidy-html5::tidy-html5 ALIAS PkgConfig::TIDY)
-else()
-    find_package(curlpp REQUIRED) # conan
-    find_package(tidy-html5 REQUIRED)
-endif()
+add_subdirectory(podcaster/external/imgui)
 
 set(PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto)
 file(MAKE_DIRECTORY ${PROTOC_OUT_DIR})
@@ -103,7 +82,7 @@ target_link_libraries(podcaster_impl PUBLIC
   tidy-html5::tidy-html5
   SDL2::SDL2
   SDL2_mixer::SDL2_mixer
-  utf8cpp::utf8cpp
+  utf8cpp
 )
 
 target_include_directories(podcaster_impl PUBLIC .)

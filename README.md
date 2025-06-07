@@ -33,31 +33,50 @@ Binaries for [MuOS](https://muos.dev/) and [Knulli](https://knulli.org/) are ava
 
 ## Build instructions
 
-### NixOS
+### Generic
 
 Run from the repository root:
 
 ```
+conan install . --build missing
+cmake --preset conan-release -DCMAKE_INSTALL_PREFIX=install
+cmake --build --preset conan-release --target install
+```
+
+#### Ubuntu prerequisites
+
+```
+apt install g++ make cmake pkg-config python3 python3-pip
+pip3 install conan Jinja2
+
+conan profile detect
+# in ~/.conan2/profile/default set "compiler.cppstd=20"
+
+# inside the repository:
+conan install . --build missing \
+  -c tools.system.package_manager:mode=install \
+  -c tools.system.package_manager:sudo=True
+```
+
+#### NixOS prerequisites
+
+```
 nix-shell nix/default.nix
-cmake -G Ninja -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=install
-cmake --build build --target install
 ```
 
 ### MuOS + Knulli
 
-See the example scripts which build a distribution specific zip file in the `export` directory:
+Build dev docker for cross compiling to armv8:
+
+```
+./docker/build_dev_base.sh
+```
+
+Build a distribution specific zip files in the `export` directory:
 
 ```
 ./docker/build_muos_archive.sh
 ./docker/build_knulli_archive.sh
-```
-
-### Other distros
-
-It should be possible to build on any distro using the [Conan](https://conan.io/) package manager to install prerequisites, however you'll need to edit `conanfile.py` to enable some disabled SDL features.
-
-```
-conan install . --build=missing
 ```
 
 ## License
