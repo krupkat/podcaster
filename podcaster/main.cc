@@ -18,6 +18,7 @@
 #include "podcaster/sdl_utils.h"
 
 const std::string kControllerDatabasePath = "/usr/lib/gamecontrollerdb.txt";
+
 const std::vector<std::string> kPreferredController = {
     "ANBERNIC-keys", "Deeplay-keys", "Anbernic"};
 
