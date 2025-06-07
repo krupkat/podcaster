@@ -38,10 +38,6 @@ jobs:
         build-args: |
           BASE_IMAGE=${{env.BASE_IMAGE}}
 
-    - name: Check docker images
-      run: |
-        docker images
-
     - name: Build MuOS
       id: build_muos
       run: |
