@@ -28,7 +28,7 @@ Minimalistic podcast player usable on handheld devices.
 
 Binaries for [MuOS](https://muos.dev/) and [Knulli](https://knulli.org/) are available in the [releases](https://github.com/krupkat/podcaster/releases) section.
 
- - On MuOS, install via the [archive manager](https://muos.dev/help/archive)
+ - On MuOS, install via the [archive manager](https://muos.dev/installation/archive)
  - On Knulli, unpack the zip file in `/userdata/roms/tools`
 
 ## Build instructions
