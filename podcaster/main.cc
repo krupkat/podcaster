@@ -20,7 +20,7 @@
 const std::string kControllerDatabasePath = "/usr/lib/gamecontrollerdb.txt";
 
 const std::vector<std::string> kPreferredController = {
-    "ANBERNIC-keys", "Deeplay-keys", "Anbernic"};
+    "ANBERNIC-keys", "Deeplay-keys", "Anbernic", "muOS-Keys"};
 
 #ifdef PODCASTER_HANDHELD_BUILD
 const std::string kTargetDriver = "mali";
