@@ -1,3 +1,8 @@
+# 0.4.0
+
+ - muOS Pixie support
+ - Knulli Gladiator support
+
 # 0.3.1
 
  - Handle html list in podcast description
