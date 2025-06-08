@@ -72,7 +72,7 @@ Build dev docker for cross compiling to armv8:
 ./docker/build_dev_base.sh
 ```
 
-Build a distribution specific zip files in the `export` directory:
+Build distribution specific zip files in the `export` directory:
 
 ```
 ./docker/build_muos_archive.sh
