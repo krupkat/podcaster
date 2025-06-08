@@ -109,7 +109,7 @@ if (PODCASTER_HANDHELD_BUILD)
   target_compile_definitions(podcaster_impl PUBLIC PODCASTER_HANDHELD_BUILD)
 endif()
 
-set(CMAKE_INSTALL_BINDIR ".podcaster")
+set(CMAKE_INSTALL_BINDIR ".")
 
 install(TARGETS
   podcaster_client
@@ -118,27 +118,27 @@ install(TARGETS
 )
 install(DIRECTORY
   "podcaster/licenses"
-  DESTINATION ".podcaster"
+  DESTINATION "."
 )
 install(FILES
   "podcaster/assets/OFL.txt"
-  DESTINATION ".podcaster/licenses"
+  DESTINATION "./licenses"
 )
 install(FILES
   "LICENSE"
-  DESTINATION ".podcaster/licenses"
+  DESTINATION "./licenses"
   RENAME "gpl.txt"
 )
 install(FILES
   "changelog.md"
   "podcaster/assets/NotoSans-Regular.ttf"
-  DESTINATION ".podcaster"
+  DESTINATION "."
 )
 if (PODCASTER_CFW STREQUAL "muos")
   install(FILES
     "podcaster/assets/Podcaster_muos.sh"
     DESTINATION "."
-    RENAME "Podcaster.sh"
+    RENAME "mux_launch.sh"
   )
 endif()
 if (PODCASTER_CFW STREQUAL "knulli")
