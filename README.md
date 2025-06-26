@@ -69,7 +69,7 @@ nix-shell nix/default.nix
 Build dev docker for cross compiling to armv8:
 
 ```
-./docker/build_dev_base.sh
+./docker/build_cross_base.sh
 ```
 
 Build distribution specific zip files in the `export` directory:

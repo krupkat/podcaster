@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=podcaster_client
+Comment=Tiny podcaster
+Type=Application
+Keywords=podcast
+Exec=podcaster_client
+Terminal=false
+Icon=podcaster
+Categories=Audio;

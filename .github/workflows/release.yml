@@ -31,7 +31,7 @@ jobs:
       with:
         context: .
         tags: podcaster:cross
-        file: docker/Dockerfile.cross
+        file: docker/Dockerfile.cross.base
         cache-from: type=gha
         cache-to: type=gha,mode=max
         load: true

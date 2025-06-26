@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1-labs
 
-ARG BASE_IMAGE=podcaster:cross
+ARG BASE_IMAGE=podcaster:native
 
 FROM ${BASE_IMAGE} AS dev
 
@@ -14,12 +14,16 @@ COPY --exclude=podcaster/dependencies.h \
      --exclude=podcaster/licenses \
     podcaster podcaster
 
-ARG CFW="muos"
+RUN conan install . --build missing && \
+    cmake --preset conan-minsizerel -DCMAKE_INSTALL_PREFIX=/usr -DPODCASTER_INSTALL_CLIENT=OFF && \
+    DESTDIR=AppDirServer cmake --build --preset conan-minsizerel --target install/strip
 
-RUN conan install . --build missing -o '&:handheld=True' -pr:b=default -pr:h=aarch64 && \
-    cmake --preset conan-minsizerel -DCMAKE_INSTALL_PREFIX=/install -DPODCASTER_CFW=${CFW} && \
-    cmake --build --preset conan-minsizerel --target install/strip && \
-    upx /install/podcasterd && \
-    upx /install/podcaster_client
+RUN linuxdeploy --appimage-extract-and-run --appdir build/MinSizeRel/AppDirServer --output appimage
+
+RUN conan install . --build missing && \
+    cmake --preset conan-minsizerel -DCMAKE_INSTALL_PREFIX=/usr -DPODCASTER_INSTALL_CLIENT=ON -DPODCASTER_INSTALL_SERVER=OFF && \
+    DESTDIR=AppDirClient cmake --build --preset conan-minsizerel --target install/strip
+
+RUN linuxdeploy --appimage-extract-and-run --appdir build/MinSizeRel/AppDirClient --output appimage
 
 ENTRYPOINT ["/bin/bash"]

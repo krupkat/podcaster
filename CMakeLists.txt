@@ -4,7 +4,9 @@ project(podcaster)
 
 option(BUILD_TESTING "Build tests" OFF)
 option(PODCASTER_HANDHELD_BUILD "Build for handheld devices" OFF)
-set(PODCASTER_CFW "muos" CACHE STRING "Custom firmware to build for (muos, knulli)")
+set(PODCASTER_CFW "none" CACHE STRING "Custom firmware to build for (muos, knulli)")
+option(PODCASTER_INSTALL_SERVER "Install server" ON)
+option(PODCASTER_INSTALL_CLIENT "Install client" ON)
 
 include(CTest)
 
@@ -109,31 +111,59 @@ if (PODCASTER_HANDHELD_BUILD)
   target_compile_definitions(podcaster_impl PUBLIC PODCASTER_HANDHELD_BUILD)
 endif()
 
-set(CMAKE_INSTALL_BINDIR ".")
+set(CMAKE_INSTALL_BINDIR "bin")
+set(CMAKE_INSTALL_DATADIR "share/podcaster")
 
-install(TARGETS
-  podcaster_client
-  podcasterd
-  RUNTIME
-)
-install(DIRECTORY
-  "podcaster/licenses"
-  DESTINATION "."
+if (PODCASTER_INSTALL_SERVER)
+  install(TARGETS
+    podcasterd
+    RUNTIME
+  )
+  install(FILES
+    "podcaster/assets/podcasterd.desktop"
+    DESTINATION "./share/applications"
+  )
+endif()
+
+if (PODCASTER_INSTALL_CLIENT)
+  install(TARGETS
+    podcaster_client
+    RUNTIME
+  )
+  install(DIRECTORY
+    "podcaster/licenses"
+    TYPE DATA
+  )
+  install(FILES
+    "podcaster/assets/OFL.txt"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses"
+  )
+  install(FILES
+    "LICENSE"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses"
+    RENAME "gpl.txt"
+  )
+  install(FILES
+    "changelog.md"
+    "podcaster/assets/NotoSans-Regular.ttf"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}"
+  )
+  install(FILES
+    "podcaster/assets/podcaster_client.desktop"
+    DESTINATION "./share/applications"
+  )
+endif()
+
+install(FILES
+  "podcaster/assets/podcaster_icon.png"
+  DESTINATION "./share/pixmaps"
+  RENAME "podcaster.png"
 )
 install(FILES
-  "podcaster/assets/OFL.txt"
-  DESTINATION "./licenses"
+  "podcaster/assets/podcaster.svg"
+  DESTINATION "./share/icons/hicolor/scalable/apps"
 )
-install(FILES
-  "LICENSE"
-  DESTINATION "./licenses"
-  RENAME "gpl.txt"
-)
-install(FILES
-  "changelog.md"
-  "podcaster/assets/NotoSans-Regular.ttf"
-  DESTINATION "."
-)
+
 if (PODCASTER_CFW STREQUAL "muos")
   install(FILES
     "podcaster/assets/Podcaster_muos.sh"
@@ -141,6 +171,7 @@ if (PODCASTER_CFW STREQUAL "muos")
     RENAME "mux_launch.sh"
   )
 endif()
+
 if (PODCASTER_CFW STREQUAL "knulli")
   install(FILES
     "podcaster/assets/Podcaster_knulli.sh"
