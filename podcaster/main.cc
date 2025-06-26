@@ -46,9 +46,12 @@ int main(int /*unused*/, char** /*unused*/) {
   auto exe_path = sdl::GetExePath();
   spdlog::info("Exe path: {}", exe_path.string());
 
+  auto storage_path = sdl::GetStoragePath();
+  spdlog::info("Storage path: {}", storage_path.string());
+
   // imgui
-  auto imgui_ctx =
-      imgui::Init(exe_path, window_ctx.handle.get(), window_ctx.renderer.get());
+  auto imgui_ctx = imgui::Init(exe_path, storage_path, window_ctx.handle.get(),
+                               window_ctx.renderer.get());
   spdlog::info("ImGui initialized: {}", imgui_ctx.imgui_ini_file->string());
 
 #ifdef PODCASTER_HANDHELD_BUILD
@@ -118,11 +121,8 @@ int main(int /*unused*/, char** /*unused*/) {
     SDL_SetRenderDrawColor(window_ctx.renderer.get(), 0, 0, 0, 255);
     SDL_RenderClear(window_ctx.renderer.get());
 
-    imgui::Render(
-        [&]() {
-          podcaster_gui.Run(action);
-        },
-        window_ctx.renderer.get());
+    imgui::Render([&]() { podcaster_gui.Run(action); },
+                  window_ctx.renderer.get());
 
     SDL_RenderPresent(window_ctx.renderer.get());
   }

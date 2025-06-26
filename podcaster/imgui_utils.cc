@@ -25,8 +25,8 @@ const ImWchar* GetGlyphRangesCzech() {
   return &ranges[0];
 }
 
-ImGuiContext Init(std::filesystem::path root, SDL_Window* window,
-                  SDL_Renderer* renderer) {
+ImGuiContext Init(std::filesystem::path root, std::filesystem::path storage,
+                  SDL_Window* window, SDL_Renderer* renderer) {
   IMGUI_CHECKVERSION();
   auto* context = ImGui::CreateContext();
   if (context == nullptr) {
@@ -37,7 +37,7 @@ ImGuiContext Init(std::filesystem::path root, SDL_Window* window,
 
   ImGuiIO& imgui_io = ImGui::GetIO();
   auto imgui_ini_file =
-      std::make_unique<std::filesystem::path>(root / imgui_io.IniFilename);
+      std::make_unique<std::filesystem::path>(storage / imgui_io.IniFilename);
   imgui_io.IniFilename = imgui_ini_file->c_str();
   imgui_io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
   imgui_io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -61,15 +61,15 @@ ImGuiContext Init(std::filesystem::path root, SDL_Window* window,
   ImFontGlyphRangesBuilder builder;
   builder.AddRanges(imgui_io.Fonts->GetGlyphRangesDefault());
   builder.AddRanges(GetGlyphRangesCzech());
-  builder.AddChar(0x2013); // –
-  builder.AddChar(0x2014); // —
-  builder.AddChar(0x2018); // ’
-  builder.AddChar(0x2019); // ’
-  builder.AddChar(0x2026); // …
+  builder.AddChar(0x2013);  // –
+  builder.AddChar(0x2014);  // —
+  builder.AddChar(0x2018);  // ’
+  builder.AddChar(0x2019);  // ’
+  builder.AddChar(0x2026);  // …
   builder.BuildRanges(&ranges);
 
   float scale = 1.8;
-  auto font_path = root / "NotoSans-Regular.ttf";
+  auto font_path = root / ".." / "share" / "podcaster" / "NotoSans-Regular.ttf";
   auto* font = imgui_io.Fonts->AddFontFromFileTTF(
       font_path.c_str(), std::roundf(13 * scale), nullptr, ranges.Data);
   imgui_io.Fonts->Build();

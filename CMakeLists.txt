@@ -4,9 +4,9 @@ project(podcaster)
 
 option(BUILD_TESTING "Build tests" OFF)
 option(PODCASTER_HANDHELD_BUILD "Build for handheld devices" OFF)
-set(PODCASTER_CFW "none" CACHE STRING "Custom firmware to build for (muos, knulli)")
 option(PODCASTER_INSTALL_SERVER "Install server" ON)
 option(PODCASTER_INSTALL_CLIENT "Install client" ON)
+set(PODCASTER_CFW "none" CACHE STRING "Custom firmware to build for (muos, knulli)")
 
 include(CTest)
 
@@ -154,15 +154,17 @@ if (PODCASTER_INSTALL_CLIENT)
   )
 endif()
 
-install(FILES
-  "podcaster/assets/podcaster_icon.png"
-  DESTINATION "./share/pixmaps"
-  RENAME "podcaster.png"
-)
-install(FILES
-  "podcaster/assets/podcaster.svg"
-  DESTINATION "./share/icons/hicolor/scalable/apps"
-)
+if (PODCASTER_CFW STREQUAL "none")
+  install(FILES
+    "podcaster/assets/podcaster_icon.png"
+    DESTINATION "./share/pixmaps"
+    RENAME "podcaster.png"
+  )
+  install(FILES
+    "podcaster/assets/podcaster.svg"
+    DESTINATION "./share/icons/hicolor/scalable/apps"
+  )
+endif()
 
 if (PODCASTER_CFW STREQUAL "muos")
   install(FILES

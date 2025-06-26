@@ -32,7 +32,8 @@ Action AboutWindow::DrawImpl(const Action& incoming_action) {
 }
 
 void AboutWindow::OpenImpl(const PathsForAboutWindow& paths) {
-  changelog_ = ReadFile("changelog.md");
+  auto changelog_path = exe_path_ / ".." / "share" / "podcaster" / "changelog.md";
+  changelog_ = ReadFile(changelog_path.string());
   db_path_ = paths.db_path;
   if (not db_path_.empty()) {
     config_path_ = db_path_ / "config.textproto";

@@ -18,12 +18,12 @@ RUN conan install . --build missing && \
     cmake --preset conan-minsizerel -DCMAKE_INSTALL_PREFIX=/usr -DPODCASTER_INSTALL_CLIENT=OFF && \
     DESTDIR=AppDirServer cmake --build --preset conan-minsizerel --target install/strip
 
-RUN linuxdeploy --appimage-extract-and-run --appdir build/MinSizeRel/AppDirServer --output appimage
+RUN linuxdeploy --appdir build/MinSizeRel/AppDirServer --output appimage
 
 RUN conan install . --build missing && \
     cmake --preset conan-minsizerel -DCMAKE_INSTALL_PREFIX=/usr -DPODCASTER_INSTALL_CLIENT=ON -DPODCASTER_INSTALL_SERVER=OFF && \
     DESTDIR=AppDirClient cmake --build --preset conan-minsizerel --target install/strip
 
-RUN linuxdeploy --appimage-extract-and-run --appdir build/MinSizeRel/AppDirClient --output appimage
+RUN linuxdeploy --appdir build/MinSizeRel/AppDirClient --output appimage
 
 ENTRYPOINT ["/bin/bash"]
