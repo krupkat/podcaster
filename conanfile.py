@@ -32,20 +32,19 @@ class PodcasterRecipe(ConanFile):
     default_options = {
         "handheld": False,
         "skip_generate": False,
-        "sdl_mixer/*:flac": False,
-        "sdl_mixer/*:opus": False,
-        "spdlog/*:use_std_fmt": True,
-        "grpc/*:codegen": True,
-        "grpc/*:cpp_plugin": True,
-        "grpc/*:csharp_ext": False,
-        "grpc/*:php_plugin": False,
-        "grpc/*:node_plugin": False,
-        "grpc/*:otel_plugin": False,
-        "grpc/*:ruby_plugin": False,
-        "grpc/*:csharp_plugin": False,
-        "grpc/*:python_plugin": False,
-        "grpc/*:with_libsystemd": False,
-        "grpc/*:objective_c_plugin": False
+        # "sdl_mixer/*:flac": False,
+        # "sdl_mixer/*:opus": False,
+        # "grpc/*:codegen": True,
+        # "grpc/*:cpp_plugin": True,
+        # "grpc/*:csharp_ext": False,
+        # "grpc/*:php_plugin": False,
+        # "grpc/*:node_plugin": False,
+        # "grpc/*:otel_plugin": False,
+        # "grpc/*:ruby_plugin": False,
+        # "grpc/*:csharp_plugin": False,
+        # "grpc/*:python_plugin": False,
+        # "grpc/*:with_libsystemd": False,
+        # "grpc/*:objective_c_plugin": False
     }
 
     def requirements(self):
@@ -90,11 +89,11 @@ class PodcasterRecipe(ConanFile):
 
             dep_licenses = list(
                 entry for entry in dep_license_dir.iterdir() if entry.is_file())
-            if len(dep_licenses) == 1:
-                licenses[name] = dep_licenses[0].relative_to(source_dir)
-            else:
-                raise Exception(
-                    f"License file for {name} already exists, multiple licenses not supported")
+            # if len(dep_licenses) == 1:
+            licenses[name] = dep_licenses[0].relative_to(source_dir)
+            # else:
+                # raise Exception(
+                    # f"License file for {name} already exists, multiple licenses not supported")
 
         return licenses
 

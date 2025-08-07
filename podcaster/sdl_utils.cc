@@ -170,7 +170,7 @@ SDLWindowContext InitWindow(int driver_index, Uint32 render_flags) {
   Uint32 window_flags = SDL_WINDOW_SHOWN;
 #endif
   SDLWindowPtr window = {
-      SDL_CreateWindow("empty", SDL_WINDOWPOS_UNDEFINED,
+      SDL_CreateWindow("Tiny Podcaster", SDL_WINDOWPOS_UNDEFINED,
                        SDL_WINDOWPOS_UNDEFINED, 640, 480, window_flags),
       {&SDL_DestroyWindow}};
 

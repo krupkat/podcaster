@@ -56,7 +56,7 @@ std::string DownloadFilename(const std::string& podcast_uri,
   }
 
   auto hash = std::hash<std::string>{}(podcast_uri);
-  return std::format("{}_{}", hash, filename);
+  return fmt::format("{}_{}", hash, filename);
 }
 
 int XferInfoCallbackFunctor::Execute(curl_off_t dltotal, curl_off_t dlnow,

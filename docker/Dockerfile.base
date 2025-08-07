@@ -13,7 +13,7 @@ RUN apt update
 # install dev tools
 
 RUN apt install -y --no-install-recommends \
-    gcc make cmake ninja-build python3 python3-pip libfile-copy-recursive-perl gcc-13 g++-13 \
+    gcc make cmake ninja-build python3 python3-pip libfile-copy-recursive-perl gcc-11 g++-11 \
     clangd-18 clang-tidy-18 clang-format-18 pkg-config wget file
 
 RUN pip3 install conan Jinja2 --break-system-packages
@@ -24,16 +24,6 @@ ENV CONAN_HOME=/root/.conan
 COPY docker/conan_profile_default /root/.conan/profiles/default
 
 # install build dependencies
-
-# RUN --mount=type=tmpfs,target=/build \
-#     --mount=source=docker/host_tools.py,target=/build/conanfile.py \
-#     cd /build && \
-#     conan install . --build missing && \
-#     source host_tools_env.sh && \
-#     ln -s `which grpc_cpp_plugin` /usr/local/bin/grpc_cpp_plugin && \
-#     ln -s `which protoc` /usr/local/bin/protoc && \
-#     ln -s `which upx` /usr/local/bin/upx && \
-#     source deactivate_host_tools_env.sh
 
 RUN --mount=type=tmpfs,target=/build \
     --mount=source=conanfile.py,target=/build/conanfile.py \
