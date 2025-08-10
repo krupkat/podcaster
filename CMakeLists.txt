@@ -4,8 +4,6 @@ project(podcaster)
 
 option(BUILD_TESTING "Build tests" OFF)
 option(PODCASTER_HANDHELD_BUILD "Build for handheld devices" OFF)
-option(PODCASTER_INSTALL_SERVER "Install server" ON)
-option(PODCASTER_INSTALL_CLIENT "Install client" ON)
 set(PODCASTER_CFW "none" CACHE STRING "Custom firmware to build for (muos, knulli)")
 
 include(CTest)
@@ -114,45 +112,40 @@ endif()
 set(CMAKE_INSTALL_BINDIR "bin")
 set(CMAKE_INSTALL_DATADIR "share/podcaster")
 
-if (PODCASTER_INSTALL_SERVER)
-  install(TARGETS
-    podcasterd
-    RUNTIME
-  )
-  install(FILES
-    "podcaster/assets/podcasterd.desktop"
-    DESTINATION "./share/applications"
-  )
-endif()
-
-if (PODCASTER_INSTALL_CLIENT)
-  install(TARGETS
-    podcaster_client
-    RUNTIME
-  )
-  install(DIRECTORY
-    "podcaster/licenses"
-    TYPE DATA
-  )
-  install(FILES
-    "podcaster/assets/OFL.txt"
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses"
-  )
-  install(FILES
-    "LICENSE"
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses"
-    RENAME "gpl.txt"
-  )
-  install(FILES
-    "changelog.md"
-    "podcaster/assets/NotoSans-Regular.ttf"
-    DESTINATION "${CMAKE_INSTALL_DATADIR}"
-  )
-  install(FILES
-    "podcaster/assets/podcaster_client.desktop"
-    DESTINATION "./share/applications"
-  )
-endif()
+install(TARGETS
+  podcasterd
+  RUNTIME
+)
+# install(FILES
+#   "podcaster/assets/podcasterd.desktop"
+#   DESTINATION "./share/applications"
+# )
+install(TARGETS
+  podcaster_client
+  RUNTIME
+)
+install(DIRECTORY
+  "podcaster/licenses"
+  TYPE DATA
+)
+install(FILES
+  "podcaster/assets/OFL.txt"
+  DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses"
+)
+install(FILES
+  "LICENSE"
+  DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses"
+  RENAME "gpl.txt"
+)
+install(FILES
+  "changelog.md"
+  "podcaster/assets/NotoSans-Regular.ttf"
+  DESTINATION "${CMAKE_INSTALL_DATADIR}"
+)
+# install(FILES
+#   "podcaster/assets/podcaster_client.desktop"
+#   DESTINATION "./share/applications"
+# )
 
 if (PODCASTER_CFW STREQUAL "none")
   install(FILES

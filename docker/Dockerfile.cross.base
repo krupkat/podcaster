@@ -16,8 +16,8 @@ RUN apt update
 # install dev tools
 
 RUN apt install -y --no-install-recommends \
-    gcc make cmake ninja-build python3 python3-pip libfile-copy-recursive-perl gcc-13 g++-13 \
-    clangd-18 clang-tidy-18 clang-format-18 g++-13-aarch64-linux-gnu gcc-13-aarch64-linux-gnu
+    gcc make cmake ninja-build python3 python3-pip libfile-copy-recursive-perl gcc-11 g++-11 \
+    clangd-18 clang-tidy-18 clang-format-18 g++-11-aarch64-linux-gnu gcc-11-aarch64-linux-gnu
 
 RUN pip3 install conan Jinja2 --break-system-packages
 

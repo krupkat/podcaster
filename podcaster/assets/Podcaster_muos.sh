@@ -15,9 +15,9 @@ cd "$PODCASTER_DIR" || exit
 if pgrep "podcasterd" > /dev/null; then
     echo "Already running"
 else
-    nohup ./podcasterd $DB_DIR &> server.log &
+    nohup ./bin/podcasterd $DB_DIR &> server.log &
 fi
 
 SET_VAR "system" "foreground_process" "podcaster_client"
 
-./podcaster_client &> client.log
+./bin/podcaster_client &> client.log

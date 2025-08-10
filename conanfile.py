@@ -31,20 +31,7 @@ class PodcasterRecipe(ConanFile):
 
     default_options = {
         "handheld": False,
-        "skip_generate": False,
-        # "sdl_mixer/*:flac": False,
-        # "sdl_mixer/*:opus": False,
-        # "grpc/*:codegen": True,
-        # "grpc/*:cpp_plugin": True,
-        # "grpc/*:csharp_ext": False,
-        # "grpc/*:php_plugin": False,
-        # "grpc/*:node_plugin": False,
-        # "grpc/*:otel_plugin": False,
-        # "grpc/*:ruby_plugin": False,
-        # "grpc/*:csharp_plugin": False,
-        # "grpc/*:python_plugin": False,
-        # "grpc/*:with_libsystemd": False,
-        # "grpc/*:objective_c_plugin": False
+        "skip_generate": False
     }
 
     def requirements(self):
@@ -64,10 +51,11 @@ class PodcasterRecipe(ConanFile):
             "sdl_mixer": self.dependencies["sdl_mixer"],
         }
 
-        # exclude sdl and sdl_mixer subdependencies as we're not bundling those (using system libraries)
+        # exclude sdl and sdl_mixer subdependencies on handhelds - we're not bundling those (using system libraries)
 
         for dependency in self.dependencies.direct_host.values():
-            if dependency.ref.name != "sdl" and dependency.ref.name != "sdl_mixer":
+            if not self.options.handheld or \
+                    (dependency.ref.name != "sdl" and dependency.ref.name != "sdl_mixer"):
                 deps[dependency.ref.name] = dependency
                 for subdep in dependency.dependencies.host.values():
                     deps[subdep.ref.name] = subdep
@@ -89,12 +77,11 @@ class PodcasterRecipe(ConanFile):
 
             dep_licenses = list(
                 entry for entry in dep_license_dir.iterdir() if entry.is_file())
-            # if len(dep_licenses) == 1:
-            licenses[name] = dep_licenses[0].relative_to(source_dir)
-            # else:
-                # raise Exception(
-                    # f"License file for {name} already exists, multiple licenses not supported")
 
+            licenses[name] = dep_licenses[0].relative_to(source_dir)
+            if len(dep_licenses) > 1:
+                self.output.warning(
+                    f"Multiple license files found for {name}: {', '.join(str(l) for l in dep_licenses)}. Using {licenses[name]}.")
         return licenses
 
     def configure(self):
@@ -116,6 +103,20 @@ class PodcasterRecipe(ConanFile):
             self.options["sdl/*"].opengles = False
             self.options["sdl/*"].vulkan = False
             self.options["sdl_mixer/*"].shared = True
+            self.options["sdl_mixer/*"].flac = False
+            self.options["sdl_mixer/*"].opus = False
+            # small grpc is enough
+            self.options["grpc/*"].codegen = False
+            self.options["grpc/*"].cpp_plugin = True
+            self.options["grpc/*"].csharp_ext = False
+            self.options["grpc/*"].php_plugin = False
+            self.options["grpc/*"].node_plugin = False
+            self.options["grpc/*"].otel_plugin = False
+            self.options["grpc/*"].ruby_plugin = False
+            self.options["grpc/*"].csharp_plugin = False
+            self.options["grpc/*"].python_plugin = False
+            self.options["grpc/*"].with_libsystemd = False
+            self.options["grpc/*"].objective_c_plugin = False
 
     def generate(self):
         if self.options.skip_generate:
