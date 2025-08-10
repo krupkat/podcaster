@@ -15,14 +15,9 @@ COPY --exclude=podcaster/dependencies.h \
     podcaster podcaster
 
 RUN conan install . --build missing && \
-    cmake --preset conan-release -DCMAKE_INSTALL_PREFIX=/usr -DPODCASTER_INSTALL_CLIENT=OFF && \
-    DESTDIR=AppDirServer cmake --build --preset conan-release --target install/strip
+    cmake --preset conan-release -DCMAKE_INSTALL_PREFIX=/usr && \
+    DESTDIR=AppDir cmake --build --preset conan-release --target install/strip
 
-RUN linuxdeploy --appdir build/Release/AppDirServer --output appimage
-
-RUN cmake --preset conan-release -DCMAKE_INSTALL_PREFIX=/usr -DPODCASTER_INSTALL_CLIENT=ON -DPODCASTER_INSTALL_SERVER=OFF && \
-    DESTDIR=AppDirClient cmake --build --preset conan-release --target install/strip
-
-RUN linuxdeploy --appdir build/Release/AppDirClient --output appimage
+RUN linuxdeploy --appdir build/Release/AppDir --output appimage
 
 ENTRYPOINT ["/bin/bash"]

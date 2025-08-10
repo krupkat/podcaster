@@ -57,7 +57,7 @@ class PodcasterRecipe(ConanFile):
             if not self.options.handheld or \
                     (dependency.ref.name != "sdl" and dependency.ref.name != "sdl_mixer"):
                 deps[dependency.ref.name] = dependency
-                for subdep in dependency.dependencies.host.values():
+                for subdep in dependency.dependencies.direct_host.values():
                     deps[subdep.ref.name] = subdep
 
         return deps
@@ -72,16 +72,27 @@ class PodcasterRecipe(ConanFile):
         for name, dep in deps.items():
             dep_license_dir = license_dir / name
             mkdir(self, dep_license_dir)
+
+            if not dep.package_folder:
+                self.output.warning(
+                    f"Dependency {name} does not have a package folder. Skipping license export.")
+                continue
+
             copy(self, pattern="*", src=Path(dep.package_folder) /
                  "licenses", dst=dep_license_dir)
 
             dep_licenses = list(
                 entry for entry in dep_license_dir.iterdir() if entry.is_file())
 
-            licenses[name] = dep_licenses[0].relative_to(source_dir)
-            if len(dep_licenses) > 1:
+            if len(dep_licenses) >= 1:
+                licenses[name] = dep_licenses[0].relative_to(source_dir)
+                if len(dep_licenses) > 1:
+                    self.output.warning(
+                        f"Multiple license files found for {name}: {', '.join(str(l) for l in dep_licenses)}. Using {licenses[name]}.")
+            else:
                 self.output.warning(
-                    f"Multiple license files found for {name}: {', '.join(str(l) for l in dep_licenses)}. Using {licenses[name]}.")
+                    f"No license files found for {name}.")
+
         return licenses
 
     def configure(self):
@@ -139,7 +150,7 @@ class PodcasterRecipe(ConanFile):
 
         dependency_data = sorted([
             Dependency(name, dep.ref.version, dep.license, licenses[name])
-            for name, dep in dependencies.items()
+            for name, dep in dependencies.items() if name in licenses
         ])
 
         dependencies_header_template = load_template(

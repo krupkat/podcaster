@@ -142,10 +142,10 @@ install(FILES
   "podcaster/assets/NotoSans-Regular.ttf"
   DESTINATION "${CMAKE_INSTALL_DATADIR}"
 )
-# install(FILES
-#   "podcaster/assets/podcaster_client.desktop"
-#   DESTINATION "./share/applications"
-# )
+install(FILES
+  "podcaster/assets/podcaster_client.desktop"
+  DESTINATION "./share/applications"
+)
 
 if (PODCASTER_CFW STREQUAL "none")
   install(FILES
