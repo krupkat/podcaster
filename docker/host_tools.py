@@ -6,19 +6,6 @@ from conan.tools.env import Environment
 class CapnProtoEnv(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
 
-    default_options = {
-        "grpc/*:codegen": True,
-        "grpc/*:cpp_plugin": True,
-        "grpc/*:csharp_ext": False,
-        "grpc/*:php_plugin": False,
-        "grpc/*:node_plugin": False,
-        "grpc/*:otel_plugin": False,
-        "grpc/*:ruby_plugin": False,
-        "grpc/*:csharp_plugin": False,
-        "grpc/*:python_plugin": False,
-        "grpc/*:with_libsystemd": False,
-        "grpc/*:objective_c_plugin": False
-    }
 
     def requirements(self):
         self.requires("grpc/1.72.0")

@@ -3,15 +3,16 @@
 
 #pragma once
 
-#include <format>
 #include <functional>
 #include <future>
 #include <optional>
 
+#include <spdlog/fmt/fmt.h>
+
 namespace utils {
 template <typename TException, typename... TArgs>
-void Throw(std::format_string<TArgs...> fmt, TArgs&&... args) {
-  std::string error_msg = std::format(fmt, std::forward<TArgs>(args)...);
+void Throw(fmt::format_string<TArgs...> fmt, TArgs&&... args) {
+  std::string error_msg = fmt::format(fmt, std::forward<TArgs>(args)...);
   throw TException(error_msg);
 }
 

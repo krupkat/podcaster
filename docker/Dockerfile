@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1-labs
 
-ARG BASE_IMAGE=podcaster:cross
+ARG BASE_IMAGE=podcaster:native
 
 FROM ${BASE_IMAGE} AS dev
 
@@ -14,12 +14,10 @@ COPY --exclude=podcaster/dependencies.h \
      --exclude=podcaster/licenses \
     podcaster podcaster
 
-ARG CFW="muos"
+RUN conan install . --build missing && \
+    cmake --preset conan-release -DCMAKE_INSTALL_PREFIX=/usr && \
+    DESTDIR=AppDir cmake --build --preset conan-release --target install/strip
 
-RUN conan install . --build missing -o '&:handheld=True' -pr:b=default -pr:h=aarch64 && \
-    cmake --preset conan-minsizerel -DCMAKE_INSTALL_PREFIX=/install -DPODCASTER_CFW=${CFW} && \
-    cmake --build --preset conan-minsizerel --target install/strip && \
-    upx /install/podcasterd && \
-    upx /install/podcaster_client
+RUN linuxdeploy --appdir build/Release/AppDir --output appimage
 
 ENTRYPOINT ["/bin/bash"]

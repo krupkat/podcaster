@@ -128,7 +128,7 @@ SDLGameControllerContext FindController(
       continue;
     }
 
-    //UpdateMapping(i); this doesn't work
+    // UpdateMapping(i); this doesn't work
 
     auto controller = SDLGameControllerPtr{SDL_GameControllerOpen(i),
                                            {&SDL_GameControllerClose}};
@@ -170,7 +170,7 @@ SDLWindowContext InitWindow(int driver_index, Uint32 render_flags) {
   Uint32 window_flags = SDL_WINDOW_SHOWN;
 #endif
   SDLWindowPtr window = {
-      SDL_CreateWindow("empty", SDL_WINDOWPOS_UNDEFINED,
+      SDL_CreateWindow("Tiny Podcaster", SDL_WINDOWPOS_UNDEFINED,
                        SDL_WINDOWPOS_UNDEFINED, 640, 480, window_flags),
       {&SDL_DestroyWindow}};
 
@@ -207,6 +207,16 @@ std::filesystem::path GetExePath() {
                                      SDL_GetError());
   }
   return {sdl_base_path.get()};
+}
+
+std::filesystem::path GetStoragePath() {
+  auto sdl_pref_path = std::unique_ptr<char, decltype(&SDL_free)>(
+      SDL_GetPrefPath("krupkat", "podcaster"), &SDL_free);
+  if (not sdl_pref_path) {
+    utils::Throw<std::runtime_error>("Error getting pref path: {}",
+                                     SDL_GetError());
+  }
+  return {sdl_pref_path.get()};
 }
 
 }  // namespace sdl

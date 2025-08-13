@@ -53,4 +53,6 @@ SDLGameControllerContext FindController(
 
 std::filesystem::path GetExePath();
 
+std::filesystem::path GetStoragePath();
+
 }  // namespace sdl

@@ -3,8 +3,9 @@
 
 #pragma once
 
-#include <format>
 #include <string>
+
+#include <spdlog/fmt/fmt.h>
 
 namespace podcaster::version {
 
@@ -14,16 +15,16 @@ struct Version {
   int patch;
 };
 
-constexpr Version Current() { return {0, 4, 0}; }
+constexpr Version Current() { return {0, 5, 0}; }
 
 inline std::string ToString() {
   const Version version = Current();
-  return std::format("{}.{}.{}", version.major, version.minor, version.patch);
+  return fmt::format("{}.{}.{}", version.major, version.minor, version.patch);
 }
 
 inline std::string AppNameWithVersion() {
   const Version version = Current();
-  return std::format("Tiny Podcaster {}.{}.{}", version.major, version.minor,
+  return fmt::format("Tiny Podcaster {}.{}.{}", version.major, version.minor,
                      version.patch);
 }
 

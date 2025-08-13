@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="64"
+   height="64"
+   viewBox="0 0 64 64"
+   fill="none"
+   version="1.1"
+   id="svg3"
+   sodipodi:docname="podcaster.svg"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs3" />
+  <sodipodi:namedview
+     id="namedview3"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="6.4081552"
+     inkscape:cx="11.859888"
+     inkscape:cy="28.089207"
+     inkscape:window-width="2560"
+     inkscape:window-height="1371"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg3" />
+  <rect
+     width="64"
+     height="64"
+     rx="12"
+     fill="#1E1E2E"
+     id="rect1" />
+  <path
+     d="M32 12C28.6863 12 26 14.6863 26 18V34C26 37.3137 28.6863 40 32 40C35.3137 40 38 37.3137 38 34V18C38 14.6863 35.3137 12 32 12Z"
+     fill="#FFFFFF"
+     id="path1" />
+  <path
+     d="m 18.910345,25.117241 v 6 c 0,7.1797 5.8203,13 13,13 7.1797,0 13,-5.8203 13,-13 v -6"
+     stroke="#a78bfa"
+     stroke-width="3"
+     stroke-linecap="round"
+     id="path2" />
+  <line
+     x1="32"
+     y1="45"
+     x2="32"
+     y2="52"
+     stroke="#A78BFA"
+     stroke-width="3"
+     stroke-linecap="round"
+     id="line2" />
+  <line
+     x1="26"
+     y1="52"
+     x2="38"
+     y2="52"
+     stroke="#A78BFA"
+     stroke-width="3"
+     stroke-linecap="round"
+     id="line3" />
+</svg>

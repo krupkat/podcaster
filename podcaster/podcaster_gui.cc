@@ -25,12 +25,12 @@ std::string ProgressString(int current, int total) {
   int secs_total = total % 60;
 
   if (hours_current > 0 || hours_total > 0) {
-    return std::format("{:02}:{:02}:{:02} / {:02}:{:02}:{:02}", hours_current,
+    return fmt::format("{:02}:{:02}:{:02} / {:02}:{:02}:{:02}", hours_current,
                        minutes_current, secs_current, hours_total,
                        minutes_total, secs_total);
   }
 
-  return std::format("{:02}:{:02} / {:02}:{:02}", minutes_current, secs_current,
+  return fmt::format("{:02}:{:02} / {:02}:{:02}", minutes_current, secs_current,
                      minutes_total, secs_total);
 }
 
@@ -115,7 +115,7 @@ Action DrawEpisode(const Podcast& podcast, const Episode& episode,
                       episode.download_progress().downloaded_bytes()) /
                       episode.download_progress().total_bytes();
         std::string label =
-            std::format("Downloading: {:.1f} / {:.1f} MB",
+            fmt::format("Downloading: {:.1f} / {:.1f} MB",
                         ToMB(episode.download_progress().downloaded_bytes()),
                         ToMB(episode.download_progress().total_bytes()));
         ImGui::ProgressBar(progress, ImVec2(-1.0f, 0.f), label.c_str());

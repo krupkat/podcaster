@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Tiny Podcaster
+Comment=Tiny Podcaster
+Type=Application
+Keywords=podcast
+Exec=podcaster_launch.sh
+Terminal=false
+Icon=podcaster
+Categories=Audio;

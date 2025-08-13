@@ -9,7 +9,7 @@ APP_DIR=$TMP_DIR/.podcaster
 mkdir -p $APP_DIR
 
 # Build the image and copy the files out
-docker build -t $IMAGE_TAG -f docker/Dockerfile --build-arg CFW=knulli "$@" .
+docker build -t $IMAGE_TAG -f docker/Dockerfile.cross --build-arg CFW=knulli "$@" .
 DOCKER_ID=$(docker create $IMAGE_TAG)
 docker cp $DOCKER_ID:/install/. $APP_DIR
 docker rm $DOCKER_ID

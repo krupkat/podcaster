@@ -1,3 +1,7 @@
+# 0.5.0
+
+ - AppImage support
+
 # 0.4.0
 
  - muOS Pixie support
