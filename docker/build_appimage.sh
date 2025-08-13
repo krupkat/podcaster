@@ -11,5 +11,5 @@ docker cp $DOCKER_ID:/build/. $TMP_DIR
 docker rm $DOCKER_ID
 
 mkdir -p export
-mv $TMP_DIR/podcaster-x86_64.AppImage export/tiny-podcaster-$VERSION.AppImage
+mv $TMP_DIR/Tiny_Podcaster-x86_64.AppImage export/tiny-podcaster-$VERSION.AppImage
 rm -rf $TMP_DIR
