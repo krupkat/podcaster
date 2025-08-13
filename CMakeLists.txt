@@ -114,9 +114,6 @@ set(CMAKE_INSTALL_DATADIR "share/podcaster")
 
 install(TARGETS
   podcasterd
-  RUNTIME
-)
-install(TARGETS
   podcaster_client
   RUNTIME
 )

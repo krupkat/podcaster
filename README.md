@@ -26,7 +26,7 @@ Minimalistic podcast player usable on handheld devices.
 
 ## Install
 
-Binaries for [MuOS](https://muos.dev/) and [Knulli](https://knulli.org/) are available in the [releases](https://github.com/krupkat/podcaster/releases) section.
+Binaries for [MuOS](https://muos.dev/) and [Knulli](https://knulli.org/) are available in the [releases](https://github.com/krupkat/podcaster/releases) section, together with an AppImage for x86.
 
  - On MuOS, install via the [archive manager](https://muos.dev/installation/archive)
  - On Knulli, unpack the zip file in `/userdata/roms/tools`
@@ -37,7 +37,7 @@ Binaries for [MuOS](https://muos.dev/) and [Knulli](https://knulli.org/) are ava
 
 Run from the repository root:
 
-```
+```bash
 conan install . --build missing
 cmake --preset conan-release -DCMAKE_INSTALL_PREFIX=install
 cmake --build --preset conan-release --target install
@@ -45,12 +45,11 @@ cmake --build --preset conan-release --target install
 
 #### Ubuntu prerequisites
 
-```
+```bash
 apt install g++ make cmake pkg-config python3 python3-pip
 pip3 install conan Jinja2
 
 conan profile detect
-# in ~/.conan2/profile/default set "compiler.cppstd=20"
 
 # inside the repository:
 conan install . --build missing \
@@ -60,21 +59,30 @@ conan install . --build missing \
 
 #### NixOS prerequisites
 
-```
+```bash
 nix-shell nix/default.nix
+```
+
+### AppImage
+
+Build the AppImage in the `export` directory:
+
+```bash
+docker build -t podcaster:native -f docker/Dockerfile.base .
+./docker/build_appimage.sh
 ```
 
 ### MuOS + Knulli
 
 Build dev docker for cross compiling to armv8:
 
-```
+```bash
 ./docker/build_cross_base.sh
 ```
 
 Build distribution specific zip files in the `export` directory:
 
-```
+```bash
 ./docker/build_muos_archive.sh
 ./docker/build_knulli_archive.sh
 ```
