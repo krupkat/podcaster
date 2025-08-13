@@ -15,7 +15,7 @@ env:
   BASE_IMAGE: "ubuntu:noble-20250529"
 
 jobs:
-  upload-release:
+  upload-release-arm64:
     runs-on: ubuntu-22.04
 
     steps:
@@ -26,7 +26,7 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build dev image for building
+    - name: Build dev image for cross building
       uses: docker/build-push-action@v6
       with:
         context: .
@@ -71,3 +71,48 @@ jobs:
           ${{steps.build_muos.outputs.release_filename}}.sha256
           ${{steps.build_knulli.outputs.release_filename}}
           ${{steps.build_knulli.outputs.release_filename}}.sha256
+
+  upload-release-x86:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{inputs.tag}}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build dev image for building
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        tags: podcaster:native
+        file: docker/Dockerfile.base
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        load: true
+        build-args: |
+          BASE_IMAGE=${{env.BASE_IMAGE}}
+
+    - name: Build AppImage
+      id: build_appimage
+      run: |
+        ./docker/build_appimage.sh --build-arg BASE_IMAGE=podcaster:native
+        release_filename=`ls export/tiny-podcaster*`
+        echo "release_filename=$release_filename" >> "$GITHUB_OUTPUT"
+
+    - name: Compute checksums
+      env:
+        APPIMAGE_FILENAME: ${{steps.build_appimage.outputs.release_filename}}
+      run: |
+        shasum -a 256 "$APPIMAGE_FILENAME" > "$APPIMAGE_FILENAME.sha256"
+        cat "$APPIMAGE_FILENAME.sha256"
+
+    - name: Upload release files
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{inputs.tag}}
+        files: |
+          ${{steps.build_appimage.outputs.release_filename}}
+          ${{steps.build_appimage.outputs.release_filename}}.sha256
