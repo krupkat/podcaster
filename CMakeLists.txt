@@ -116,10 +116,6 @@ install(TARGETS
   podcasterd
   RUNTIME
 )
-# install(FILES
-#   "podcaster/assets/podcasterd.desktop"
-#   DESTINATION "./share/applications"
-# )
 install(TARGETS
   podcaster_client
   RUNTIME
@@ -142,10 +138,6 @@ install(FILES
   "podcaster/assets/NotoSans-Regular.ttf"
   DESTINATION "${CMAKE_INSTALL_DATADIR}"
 )
-install(FILES
-  "podcaster/assets/podcaster_client.desktop"
-  DESTINATION "./share/applications"
-)
 
 if (PODCASTER_CFW STREQUAL "none")
   install(FILES
@@ -156,6 +148,14 @@ if (PODCASTER_CFW STREQUAL "none")
   install(FILES
     "podcaster/assets/podcaster.svg"
     DESTINATION "./share/icons/hicolor/scalable/apps"
+  )
+  install(FILES
+    "podcaster/assets/podcaster.desktop"
+    DESTINATION "./share/applications"
+  )
+  install(PROGRAMS
+    "podcaster/assets/podcaster_launch.sh"
+    DESTINATION "${CMAKE_INSTALL_BINDIR}"
   )
 endif()
 
