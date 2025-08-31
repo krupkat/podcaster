@@ -7,3 +7,4 @@ Exec=podcaster_launch.sh
 Terminal=false
 Icon=podcaster
 Categories=Audio;
+StartupWMClass=podcaster_client
