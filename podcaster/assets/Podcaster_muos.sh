@@ -1,13 +1,18 @@
 #!/bin/sh
+
 # HELP: Tiny Podcaster
 # ICON: flip
 # GRID: Tiny Podcaster
 
 . /opt/muos/script/var/func.sh
 
-echo app >/tmp/act_go
+APP_BIN="podcaster_client"
+SETUP_APP "$APP_BIN" ""
 
-PODCASTER_DIR="$(GET_VAR "device" "storage/rom/mount")/MUOS/application/Podcaster"
+# -----------------------------------------------------------------------------
+# You do everything else within this area here for your application
+
+PODCASTER_DIR="/run/muos/storage/application/Podcaster"
 DB_DIR="/run/muos/storage/save/podcaster"
 
 cd "$PODCASTER_DIR" || exit
@@ -17,7 +22,5 @@ if pgrep "podcasterd" > /dev/null; then
 else
     nohup ./bin/podcasterd $DB_DIR &> server.log &
 fi
-
-SET_VAR "system" "foreground_process" "podcaster_client"
 
 ./bin/podcaster_client &> client.log
