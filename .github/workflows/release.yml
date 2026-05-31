@@ -16,7 +16,7 @@ env:
 
 jobs:
   upload-release-arm64:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v6
@@ -73,7 +73,7 @@ jobs:
           ${{steps.build_knulli.outputs.release_filename}}.sha256
 
   upload-release-x86:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v6
