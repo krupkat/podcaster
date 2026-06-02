@@ -35,15 +35,15 @@ class PodcasterRecipe(ConanFile):
     }
 
     def requirements(self):
-        self.requires("imgui/1.91.8")
-        self.requires("sdl/2.28.5")
-        self.requires("sdl_mixer/2.8.0")
-        self.requires("spdlog/1.15.1")
+        self.requires("imgui/1.92.8")
+        self.requires("sdl/2.32.10")
+        self.requires("sdl_mixer/2.8.1")
+        self.requires("spdlog/1.17.0")
         self.requires("curlpp/0.8.1.cci.20240530")
-        self.requires("grpc/1.72.0")
+        self.requires("grpc/1.78.1")
         self.requires("pugixml/1.15")
         self.requires("tidy-html5/5.8.0")
-        self.requires("utfcpp/4.0.5")
+        self.requires("utfcpp/4.1.1")
 
     def bundled_dependencies(self):
         deps = {

@@ -8,7 +8,7 @@ class CapnProtoEnv(ConanFile):
 
 
     def requirements(self):
-        self.requires("grpc/1.72.0")
+        self.requires("grpc/1.78.1")
         self.requires("upx/4.2.1")
 
 
